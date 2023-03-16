@@ -38,6 +38,7 @@ A list of basic everyday functions used in AWS Lambda. This repository will be d
 - Data encryption: You can use Lambda functions to automatically encrypt data at rest in RDS. Lambda functions can help you ensure that your data is always protected and compliant.
 - Compliance monitoring: You can use Lambda functions to monitor RDS for compliance with various regulations and industry standards. Lambda functions can help you identify potential compliance issues and take corrective action.
 - Disaster recovery: You can use Lambda functions to automatically failover to a secondary RDS instance in the event of a primary instance failure. Lambda functions can help you ensure that your data is always available and recoverable.
+- Data masking and obfuscation: You can use Lambda functions to automatically mask or obfuscate sensitive data in RDS. Lambda functions can help you ensure that your data is always protected and anonymized.
 
 
 
