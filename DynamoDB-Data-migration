@@ -1,0 +1,83 @@
+import boto3
+
+def lambda_handler(event, context):
+    
+    # Initialize variables
+    dynamodb = boto3.client('dynamodb')
+    s3 = boto3.resource('s3')
+    redshift = boto3.client('redshift')
+    ddb_table_name = 'my-ddb-table'
+    s3_bucket_name = 'my-s3-bucket'
+    s3_key_prefix = 'ddb-export/'
+    redshift_cluster_identifier = 'my-redshift-cluster'
+    redshift_database_name = 'my-database'
+    redshift_table_name = 'my-table'
+    max_size_in_bytes = 53687091200 # 50 GB in bytes
+    
+    # Get the current size of the DynamoDB table
+    response = dynamodb.describe_table(TableName=ddb_table_name)
+    current_size_in_bytes = response['Table']['TableSizeBytes']
+    
+    # Check if the current size exceeds the maximum allowed size - if so, export the data to S3 and load it into Redshift
+    if current_size_in_bytes > max_size_in_bytes:
+        
+        print(f"Current size ({current_size_in_bytes} bytes) of DynamoDB table {ddb_table_name} exceeds maximum allowed size ({max_size_in_bytes} bytes).")
+        
+        # Generate a unique filename for the S3 object representing the exported data
+        suffix = 1
+        while True:
+            s3_key = f"{s3_key_prefix}export-{suffix}.csv"
+            obj = s3.Object(s3_bucket_name, s3_key)
+            if not obj.get()['Body'].read(1):
+                break
+            else:
+                suffix += 1
+        
+        # Export the data from DynamoDB to S3 in CSV format
+        print(f"Exporting data from DynamoDB table {ddb_table_name} to S3 bucket {s3_bucket_name}/{s3_key}")
+        response = dynamodb.scan(
+            TableName=ddb_table_name,
+            Select='ALL_ATTRIBUTES',
+            ReturnConsumedCapacity='TOTAL'
+        )
+        lines = []
+        header = None
+        for item in response['Items']:
+            line = ','.join([f"{k}: {v['S']}" for k,v in item.items()])
+            lines.append(line)
+            if not header:
+                header = ','.join(item.keys())
+        body = '\n'.join(lines)
+        obj.put(Body=f"{header}\n{body}")
+        print(f"Data was exported to S3")
+        
+        # Connect to the Redshift cluster and load the data into the specified database and table
+        host = redshift.describe_clusters(ClusterIdentifier=redshift_cluster_identifier)['Clusters'][0]['Endpoint']['Address']
+        port = 5439
+        user = 'my-user'
+        password = 'my-password'
+        conn_string = f"postgresql://{user}:{password}@{host}:{port}/{redshift_database_name}"
+        print(f"Connecting to {conn_string}")
+        conn = psycopg2.connect(conn_string)
+        
+        # Create the target table if it doesn't exist yet
+        with conn.cursor() as cur:
+            cur.execute(f"CREATE TABLE IF NOT EXISTS {redshift_table_name} (data varchar(max));")
+            conn.commit()
+            print(f"Target table {redshift_table_name} created successfully")
+        
+        # Load the data into the target table
+        copy_sql = f"COPY {redshift_table_name} FROM 's3://{s3_bucket_name}/{s3_key}' CREDENTIALS 'aws_iam_role=my-iam-role-arn' DELIMITER ',' CSV;"
+        with conn.cursor() as cur:
+            cur.execute(copy_sql)
+            conn.commit()
+            print(f"Data loaded into {redshift_table_name} successfully")
+        
+        # Disconnect from Redshift
+        conn.close()
+        
+    else:
+        
+        print(f"Current size ({current_size_in_bytes} bytes) of DynamoDB table {ddb_table_name} is within limits.")
+        
+        # Note: This script assumes that you have already set up the necessary IAM roles and policies for accessing DynamoDB, S3, and Redshift. It also assumes that you have installed the necessary dependencies (such as the psycopg2 library for working with Redshift) in your Lambda environment.
