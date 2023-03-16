@@ -35,3 +35,9 @@ def lambda_handler(event, context):
             'statusCode': 404,
             'body': json.dumps('Error occurred while sending notification')
         }
+        
+       # Please note that this code assumes that you have already created an SNS Topic and have also granted permission for Amazon SNS to access your DynamoDB table.
+
+Also, remember to replace your-table-name with your actual DynamoDB table name, and your-SNS-topic-arn with your actual SNS topic ARN.
+        
+        
