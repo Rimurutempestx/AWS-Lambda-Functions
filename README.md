@@ -35,6 +35,7 @@ A list of basic everyday functions used in AWS Lambda. This repository will be d
 - Database auditing: You can use Lambda functions to audit database activity in RDS. Lambda functions can help you log changes to your database and identify potential security issues.
 - User management: You can use Lambda functions to manage user access and permissions in RDS. Lambda functions can help you enforce role-based access control and automatically create or delete users.
 - Performance tuning: You can use Lambda functions to automatically optimize database performance in RDS. Lambda functions can help you identify and fix performance bottlenecks in your database.
+- Data encryption: You can use Lambda functions to automatically encrypt data at rest in RDS. Lambda functions can help you ensure that your data is always protected and compliant.
 
 
 
