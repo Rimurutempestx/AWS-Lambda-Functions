@@ -1,0 +1,34 @@
+import boto3
+from datetime import datetime, timedelta
+
+def lambda_handler(event, context):
+    # Get the current date
+    today = datetime.now().strftime('%Y-%m-%d')
+
+    # Create EKS and S3 resources
+    eks = boto3.client('eks')
+    s3 = boto3.resource('s3')
+
+    # Replace 'cluster-name' with your actual EKS cluster name
+    cluster_name = 'cluster-name'
+
+    # Get the list of worker nodes for the EKS cluster
+    nodegroups = eks.list_nodegroups(clusterName=cluster_name)
+
+    # For each worker node group, check if they comply HIPPA regulation
+    for nodegroup in nodegroups['nodegroups']:
+        response = eks.describe_nodegroup(clusterName=cluster_name, nodegroupName=nodegroup)
+
+        is_compliant = True
+        # Add HIPAA compliance check here
+        # ...
+
+        # Store nodegroup info and HIPAA compliance status to S3 bucket
+        object_key = f'{today}/hipaa/{cluster_name}/{nodegroup}.json'
+        s3_obj = s3.Object('my-bucket', object_key)
+        s3_obj.put(Body=response['nodegroup'], ContentType='application/json', Metadata={'is_compliant': str(is_compliant)})
+        
+        # Here's a Python script for an AWS Lambda function that periodically checks if Amazon Elastic Kubernetes Service (EKS) worker nodes are HIPPA compliant.
+        This script uses the boto3 library to interact with AWS services. It first gets the current date and creates an EKS client and an S3 resource. Then, it lists all the worker node groups for the specified EKS cluster, checks if they comply with HIPAA regulations, and stores their information along with their compliance status to an S3 bucket. You can add additional functions to check the compliance using the relevant HIPAA command standards.
+        
+        
