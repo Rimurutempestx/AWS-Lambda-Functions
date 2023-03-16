@@ -1,0 +1,41 @@
+import boto3
+
+def lambda_handler(event, context):
+    # create DynamoDB client
+    dynamodb = boto3.client('dynamodb')
+
+    # replace 'table-name' with your actual table name
+    table_name = 'table-name'
+
+    try:
+        # scan the entire table to retrieve all items
+        response = dynamodb.scan(TableName=table_name)
+
+        # initialize total sum to zero
+        total_sum = 0
+
+        # process each item in the table
+        for item in response['Items']:
+            # retrieve numeric attribute 'value'
+            value = int(item.get('value', {'N': '0'})['N'])
+
+            # add value to total sum
+            total_sum += value
+
+        return {
+            'statusCode': 200,
+            'body': f'Sum of values: {total_sum}'
+        }
+
+    except Exception as e:
+        print(e)
+        return {
+            'statusCode': 500,
+            'body': 'Error retrieving data from DynamoDB'
+        }
+        
+        # You'll need to modify table_name to match the name of your actual DynamoDB table. When the Lambda function is executed, it will scan the entire table and compute the sum of the values for each item. The result is returned as the response body, along with a 200 status code. If any errors occur during execution, a 500 status code is returned.
+
+
+        
+        
