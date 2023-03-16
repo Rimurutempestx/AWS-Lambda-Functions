@@ -40,6 +40,9 @@ A list of basic everyday functions used in AWS Lambda. This repository will be d
 - Disaster recovery: You can use Lambda functions to automatically failover to a secondary RDS instance in the event of a primary instance failure. Lambda functions can help you ensure that your data is always available and recoverable.
 - Data masking and obfuscation: You can use Lambda functions to automatically mask or obfuscate sensitive data in RDS. Lambda functions can help you ensure that your data is always protected and anonymized.
 
+## Amazon EKS (Elastic Kubernetes Service)
+
+- 
 
 
 
