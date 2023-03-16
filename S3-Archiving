@@ -1,0 +1,39 @@
+import boto3
+
+def lambda_handler(event, context):
+    # Set up the S3 and Glacier clients
+    s3 = boto3.resource("s3")
+    glacier = boto3.client("glacier")
+
+    # Replace 'source-bucket-name' and 'source-object-key' with your actual bucket and object names
+    source_bucket_name = "source-bucket-name"
+    source_object_key = "source-object-key"
+
+    # Replace 'vault-name' with the name of the Glacier vault you want to use
+    vault_name = "vault-name"
+
+    try:
+        # Copy the object to Glacier Deep Archive
+        copy_source = {
+            "Bucket": source_bucket_name,
+            "Key": source_object_key
+        }
+        s3.Object(source_bucket_name, source_object_key).delete()
+        glacier.upload_archive(vaultName=vault_name, body=copy_source)
+        
+        return {
+            "statusCode": 200,
+            "body": "Object transferred to Glacier Deep Archive successfully."
+        }
+    except Exception as e:
+        print(e)
+        return {
+            "statusCode": 500,
+            "body": "An error occurred while transferring the object to Glacier Deep Archive."
+        }
+        
+        # The script uses the boto3 library to set up an S3 client and a Glacier client. It then specifies the name of the S3 bucket and object key (path) for the object that should be transferred to S3 Glacier Deep Archive, and the name of the Glacier vault to use.
+
+The upload_archive method is used to initiate the upload job from S3 to Glacier. After the object has been uploaded successfully, the script deletes the original object from the S3 bucket.
+
+Note: This is just an example script and may need modifications based on your specific requirements. In a real-world scenario, you would need to handle exceptions and add error logging.
