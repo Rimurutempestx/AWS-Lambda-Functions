@@ -30,6 +30,7 @@ A list of basic everyday functions used in AWS Lambda. This repository will be d
 ## RDS (Relational Database Service)
 
 - Data schema updates: You can use Lambda functions to automatically update database schemas in RDS. Lambda functions can help you handle schema migrations and versioning.
+- Automated backup:  You can use Lambda functions to schedule automated backups of your RDS databases. This can help you ensure that your data is always backed up and recoverable.
 
 
 
