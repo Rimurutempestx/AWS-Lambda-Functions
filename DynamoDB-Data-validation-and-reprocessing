@@ -1,0 +1,40 @@
+import boto3
+
+def lambda_handler(event, context):
+    # Create DynamoDB client and resources
+    dynamodb = boto3.client('dynamodb')
+    s3 = boto3.client('s3')
+    
+    # Replace 'table-name' with your actual table name
+    table_name = 'table-name'
+    
+    # Replace 'bucket-name' with your actual S3 bucket name
+    bucket_name = 'bucket-name'
+    
+    # Retrieve object size from S3 bucket
+    object_size = s3.head_object(Bucket=bucket_name, Key=event['Records'][0]['s3']['object']['key'])['ContentLength']
+    
+    try:
+        # Get the DynamoDB table
+        table = dynamodb.describe_table(TableName=table_name)['Table']
+
+        # Calculate current table size
+        table_size = table['TableSizeBytes'] + object_size
+        
+        # If table size exceeds limit of 5GB, raise exception
+        if table_size >= 5368709120:
+            raise Exception("DynamoDB table size cannot exceed 5GB")
+        else:
+            return {
+                    'statusCode': 200,
+                    'body': json.dumps('Object data added to DynamoDB successfully')
+                }
+    except Exception as e:
+        print(e)
+        return {
+            'statusCode': 404,
+            'body': json.dumps('Error occurred while adding object data to DynamoDB')
+        }
+        
+        # This code retrieves the size of the object uploaded to a specific Amazon S3 bucket, and then checks to see if the object will exceed the size limit of 5GB for the DynamoDB table. If the size limit is exceeded, the function raises an exception; otherwise, it adds the object data to the specified DynamoDB table. This function can be triggered by an event from the S3 bucket such as an ObjectCreated event.
+        
