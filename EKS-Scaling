@@ -1,0 +1,62 @@
+import boto3
+import os
+
+# set up the AWS EKS and EC2 clients
+eks = boto3.client('eks')
+ec2 = boto3.client('ec2')
+
+def lambda_handler(event, context):
+
+    # get the current number of worker nodes in the cluster
+    cluster_name = os.environ['ClusterName']
+    response = eks.describe_cluster(name=cluster_name)
+    
+    if response['ResponseMetadata']['HTTPStatusCode'] != 200 or response['cluster']['status'] != 'ACTIVE':
+        raise Exception('Could not access EKS cluster: {}'.format(response))
+        
+    num_worker_nodes = response['cluster']['desiredCapacity']
+    
+    # determine the average CPU utilization across all cluster worker nodes
+    cpu_usage_percent_tot = 0
+    ec2_instance_ids = []
+    
+    paginator = ec2.get_paginator('describe_instances')
+    for page in paginator.paginate(Filters=[{'Name': 'tag:k8s.io/cluster-autoscaler/enabled', 'Values': ['true']},
+                                             {'Name': 'tag:k8s.io/cluster-autoscaler/' + cluster_name, 'Values': ['owned']}]):
+                                                
+        for reservation in page['Reservations']:
+            for instance in reservation['Instances']:
+                ec2_instance_ids.append(instance['InstanceId'])
+                
+                cw = boto3.client('cloudwatch')
+                response = cw.get_metric_statistics(
+                    Namespace='AWS/EC2',
+                    MetricName='CPUUtilization',
+                    Dimensions=[
+                        {
+                            'Name': 'InstanceId',
+                            'Value': instance['InstanceId']
+                        },
+                    ],
+                    StartTime=datetime.utcnow() - timedelta(minutes=5),
+                    EndTime=datetime.utcnow(),
+                    Period=300,
+                    Statistics=['Average'],
+                )
+                
+                if 'Datapoints' in response and len(response['Datapoints']) > 0:
+                    cpu_usage_percent = response['Datapoints'][0]['Average']
+                    cpu_usage_percent_tot += (100*num_worker_nodes)*cpu_usage_percent
+                    
+    avg_cpu_usage_percent = cpu_usage_percent_tot/(100*num_worker_nodes*len(ec2_instance_ids))
+    print('Average CPU usage percent over the last 5 minutes: {}'.format(avg_cpu_usage_percent))
+    
+    # scale the cluster as required based on the current level of CPU utilization
+    if avg_cpu_usage_percent >= int(os.environ['ThroughputThreshold']):
+        new_cluster_size = min(num_worker_nodes + int(os.environ['NumNewWorkerNodes']), int(os.environ['MaxClusterSize']))
+        print('Scaling up EKS cluster size from {} to {}'.format(num_worker_nodes, new_cluster_size))
+        eks.update_cluster_config(name=cluster_name, scalingConfig={'desiredSize': new_cluster_size})
+        
+        # This script will first retrieve the current number of worker nodes in the EKS cluster, and then calculate the average CPU utilization across all the worker nodes. If the average CPU utilization crosses a certain threshold set through an environment variable (ThroughputThreshold), the script will trigger an update to the EKS cluster configuration to increase the desired number of worker nodes by another value specified through an environment variable (NumNewWorkerNodes). The script caps the maximum size of the cluster at another environment variable value (MaxClusterSize) to ensure the cost of running the cluster doesn't spiral out of control.
+
+Note that this script assumes your worker nodes are tagged with k8s.io/cluster-autoscaler/enabled=true and k8s.io/cluster-autoscaler/<cluster name>=owned. This ensures only worker nodes that are part of the EKS cluster are selected for obtaining average CPU utilization.
