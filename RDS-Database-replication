@@ -1,0 +1,41 @@
+import boto3
+
+source_db_instance_id = '<source-db-instance-id>'
+destination_db_instance_id = '<destination-db-instance-id>'
+
+def lambda_handler(event, context):
+    # Create RDS client
+    rds = boto3.client('rds')
+
+    try:
+        # Get source DB snapshot
+        source_snapshot_response = rds.create_db_snapshot(
+            DBInstanceIdentifier=source_db_instance_id,
+            DBSnapshotIdentifier='source-snapshot'
+        )
+
+        # Copy source snapshot to destination region
+        s3 = boto3.resource('s3')
+        s3.Object('<bucket-name>', 'rds-backups/source-snapshot').copy_from(CopySource=f"{source_snapshot_response['DBSnapshot']['DBSnapshotArn']}")
+
+        target_snapshot_identifier = 'target-snapshot'
+
+        # Restore target snapshot from source snapshot
+        restore_response = rds.restore_db_instance_from_db_snapshot(
+            DBInstanceIdentifier=destination_db_instance_id,
+            DBSnapshotIdentifier=target_snapshot_identifier
+        )
+
+        return {
+            'statusCode': 200,
+            'body': f"Replicated data from {source_db_instance_id} to {destination_db_instance_id}"
+        }
+    except Exception as e:
+        print(e)
+        return {
+            'statusCode': 404,
+            'body': json.dumps('Error occurred while replicating data between RDS instances')
+        }
+
+# Example Python script for an AWS Lambda function that will replicate data between two Amazon RDS instances:
+
