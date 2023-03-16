@@ -22,6 +22,8 @@ A list of basic everyday functions used in AWS Lambda. This repository will be d
 - Backup and archival: You can use Lambda functions to automatically backup or archive data from DynamoDB to other storage services like Amazon S3. This can help you ensure that you have a reliable and secure backup of your data.
 - Aggregation and analytics: You can use Lambda functions to aggregate data from DynamoDB and perform analytics on it. This can help you gain insights into your data or create dashboards that display key metrics.
 - Access control: You can use Lambda functions to enforce access control policies on your DynamoDB data. For example, you can use Lambda functions to check if a user is authorized to read or write data to a specific table.
+- Event-driven architecture: You can use Lambda functions to create event-driven architectures that respond to changes in DynamoDB data. This can help you build complex workflows that react to real-time events.
+
 
 
 
