@@ -1,0 +1,121 @@
+import boto3
+
+def lambda_handler(event, context):
+    # Connect to EKS using the AWS SDK
+    eks = boto3.client('eks')
+
+    # Get the name of the EKS cluster from the event
+    # This event could be triggered by anything - a CloudFormation stack creation, or a direct invocation of the Lambda function.
+    cluster_name = event.get('cluster_name', 'my-eks-cluster')
+
+    # Get the endpoint URL for the EKS cluster
+    response = eks.describe_cluster(
+        name=cluster_name,
+    )
+    endpoint_url = response['cluster']['endpoint']
+
+    # Define the API resources and methods
+    resources = [
+        {
+            "name": "hello-world",
+            "path": "/hello",
+            "methods": ["GET"]
+        },
+        {
+            "name": "add-to-database",
+            "path": "/database",
+            "methods": ["POST"]
+        }
+    ]
+
+    # Generate the Kubernetes manifests for the API
+    api_manifests = []
+    for resource in resources:
+        api_manifests.append({
+            "apiVersion": "v1",
+            "kind": "Service",
+            "metadata": {
+                "name": f"{resource['name']}-svc"
+            },
+            "spec": {
+                "ports": [
+                    {
+                        "name": "http",
+                        "port": 80,
+                        "targetPort": 8080
+                    }
+                ],
+                "selector": {
+                    "app": resource['name']
+                }
+            }
+        })
+        api_manifests.append({
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {
+                "name": f"{resource['name']}-deploy"
+            },
+            "spec": {
+                "replicas": 2,
+                "selector": {
+                    "matchLabels": {
+                        "app": resource['name']
+                    }
+                },
+                "template": {
+                    "metadata": {
+                        "labels": {
+                            "app": resource['name']
+                        }
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "name": "api",
+                                "image": "<your-docker-image>",
+                                "env": [
+                                    {
+                                        "name": "ENDPOINT_URL",
+                                        "value": endpoint_url
+                                    },
+                                    {
+                                        "name": "API_RESOURCE",
+                                        "value": resource['name']
+                                    },
+                                    {
+                                        "name": "API_PATH",
+                                        "value": resource['path']
+                                    }
+                                ],
+                                "ports": [
+                                    {
+                                        "name": "http",
+                                        "containerPort": 8080
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }
+        })
+
+    # Use the Kubernetes API to create the API resources
+    kubernetes = boto3.client('sts').assume_role(
+        RoleArn='<your-role-arn>',
+        RoleSessionName='kube-admin-session',
+    )
+    kubeconfig = eks.create_kubeconfig(name=cluster_name)
+    api_resource = {"apiVersion": "v1", "kind": "Namespace", "metadata": {"name": "custom-api-namespace"}}
+    api_manifests.insert(0, api_resource)
+
+    v1 = kubernetes.create_namespaced_service(body=api_manifests[1], namespace="custom-api-namespace")
+    v2 = kubernetes.create_namespaced_deployment(body=api_manifests[2], namespace="custom-api-namespace")
+
+    return {
+        'statusCode': 200,
+        'body': json.dumps('Custom API deployment successful')
+    }
+    
+    #  This is a example Python script for an AWS Lambda function that will manage a custom API in Amazon Elastic Kubernetes Service. To use this script, you would need to fill in your own Docker image name, IAM role ARN, and other configuration details specific to your environment.
