@@ -1,0 +1,40 @@
+import boto3
+import pymysql
+
+def lambda_handler(event, context):
+    # Set the RDS details
+    db_username = 'your-username'
+    db_password = 'your-password'
+    rds_host = 'your-rds-host'
+    db_name = 'your-db-name'
+
+    # Connect to the RDS database
+    conn = pymysql.connect(host=rds_host,
+                           user=db_username,
+                           password=db_password,
+                           db=db_name)
+    cursor = conn.cursor()
+
+    # Update the database schema
+    try:
+        alter_query = 'ALTER TABLE your-table ADD COLUMN new_column INT'
+        cursor.execute(alter_query)
+        conn.commit()
+
+        return {
+            'statusCode': 200,
+            'body': 'Schema updated successfully'
+        }
+    except Exception as e:
+        print(e)
+        conn.rollback()
+        return {
+            'statusCode': 500,
+            'body': 'Error occurred while updating schema'
+        }
+    finally:
+        cursor.close()
+        conn.close()
+        
+       #  This code uses the pymysql library to connect to the Amazon RDS instance and execute SQL queries. It then updates the database schema by adding a new column to a table using an ALTER TABLE query. Finally, it returns a response indicating whether or not the schema was updated successfully. Note that you will need to replace your-username, your-password, your-rds-host, your-db-name, your-table, and new_column with your own values.
+        
