@@ -1,0 +1,36 @@
+import boto3
+import json
+
+def lambda_handler(event, context):
+    ecs_client = boto3.client('ecs')
+    
+    cluster_name = 'YOUR_CLUSTER_NAME'
+    service_name = 'YOUR_SERVICE_NAME'
+
+    # Get the current running tasks in the cluster
+    list_tasks_response = ecs_client.list_tasks(
+        cluster=cluster_name,
+        serviceName=service_name,
+        desiredStatus='RUNNING'
+    )
+    
+    running_task_count = len(list_tasks_response['taskArns'])
+    
+    # Get the service's desired count
+    describe_service_response = ecs_client.describe_services(
+        cluster=cluster_name,
+        services=[service_name]
+    )
+    
+    desired_task_count = describe_service_response['services'][0]['desiredCount']
+    
+    # Compare the running task count with the desired count
+    if running_task_count < desired_task_count:
+        print(f"Warning: Running task count ({running_task_count}) is less than desired task count ({desired_task_count})")
+    else:
+        print("Running task count is equal to or greater than desired task count")
+        
+        # This is a sample Python script for an AWS Lambda function that will monitor your Amazon Elastic Kubernetes worker nodes.
+        This script uses the boto3 library to interact with the Amazon ECS API. It retrieves the current running tasks in a specified cluster and service, compares them with the desired task count, and logs a warning if the running task count is less than the desired count.
+
+You can modify this script to suit your specific monitoring needs, such as sending notifications or scaling up/down the cluster automatically.
