@@ -20,3 +20,11 @@ A list of basic everyday functions used in AWS Lambda. This repository will be d
 - Indexing and querying: You can use Lambda functions to create indexes or handle complex queries that aren't supported by DynamoDB out of the box. Lambda functions can help you create custom indexes or search algorithms, which can help you speed up queries or provide additional functionality.
 - Real-time stream processing: DynamoDB Streams allows you to capture changes to your data in real-time. You can use Lambda functions to process these streams and perform additional actions based on the data changes.
 - Backup and archival: You can use Lambda functions to automatically backup or archive data from DynamoDB to other storage services like Amazon S3. This can help you ensure that you have a reliable and secure backup of your data.
+- Aggregation and analytics: You can use Lambda functions to aggregate data from DynamoDB and perform analytics on it. This can help you gain insights into your data or create dashboards that display key metrics.
+
+
+
+
+
+
+
