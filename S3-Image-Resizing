@@ -1,1 +1,43 @@
+import boto3
+import os
+import io
+from PIL import Image
+
+# create S3 and SNS client
+s3 = boto3.client('s3')
+sns = boto3.client('sns')
+
+# Replace 'bucket-name' with your actual S3 bucket name
+bucket_name = 'bucket-name'
+
+def lambda_handler(event, context):
+    try:
+        # get object key from S3 event
+        key = event['Records'][0]['s3']['object']['key']
+
+        # download the original image from S3
+        response = s3.get_object(Bucket=bucket_name, Key=key)
+        image_content = response['Body'].read()
+
+        # resize the image using Pillow
+        with Image.open(io.BytesIO(image_content)) as im:
+            im.thumbnail((100, 100))
+            resized_image = io.BytesIO()
+            im.save(resized_image, format='jpeg')
+            resized_content = resized_image.getvalue()
+
+        # upload the resized image to S3
+        new_key = os.path.splitext(key)[0] + '_resized.jpeg'
+        s3.put_object(Bucket=bucket_name, Key=new_key, Body=resized_content)
+
+        return {
+            'statusCode': 200,
+            'body': json.dumps('Image resized successfully')
+        }
+    except Exception as e:
+        print(e)
+        return {
+            'statusCode': 404,
+            'body': json.dumps('Error occurred while resizing image')
+        }
 
