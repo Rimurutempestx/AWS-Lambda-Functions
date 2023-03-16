@@ -1,0 +1,56 @@
+import boto3
+
+def lambda_handler(event, context):
+    # Set up the Redshift client
+    redshift = boto3.client('redshift')
+    
+    # Specify the name and schema of the input table
+    input_table_name = 'my_input_table'
+    input_table_schema = 'public'
+    
+    # Specify the format conversion to be applied to each column
+    column_format_conversion = {
+        'date_column': 'YYYY-MM-DD',
+        'numeric_column': '999999.99',
+        'string_column': 'Y'
+    }
+    
+    try:
+        # Generate the SQL statement to convert the column formats
+        sql_statement = ''
+        for column_name, new_format in column_format_conversion.items():
+            if sql_statement != '':
+                sql_statement += ', '
+            sql_statement += column_name + '::' + new_format
+        
+        # Add the SQL statement to modify the format of all columns in the table
+        sql_statement = 'ALTER TABLE ' + input_table_schema + '.' \
+                        + input_table_name + ' ALTER COLUMN ' \
+                        + sql_statement + ';'
+        
+        # Execute the SQL statement
+        redshift.execute_statement(
+            ClusterIdentifier='my-redshift-cluster',
+            Database='my-redshift-database',
+            Sql=sql_statement,
+            WithEvent=True
+        )
+        
+        return {
+            'statusCode': 200,
+            'body': 'Column formatting updated successfully'
+        }
+    
+    except Exception as e:
+        print(e)
+        return {
+            'statusCode': 500,
+            'body': 'Error updating column formatting: ' + str(e)
+        }
+        
+        #  Python script for a Lambda function that transforms the data format of all records in an Amazon Redshift table using the AWS SDK.
+        This script uses the boto3 library to create an Amazon Redshift client object, which allows it to execute SQL statements on the specified cluster.
+
+The script then defines the input table name and schema, and specifies the format conversions to be applied to each column. These details are then used to construct an SQL statement that converts the formats of each column in the table.
+
+Finally, the script executes the generated SQL statement on the provided Amazon Redshift cluster and returns the status of the operation.
