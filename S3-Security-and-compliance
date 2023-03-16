@@ -1,0 +1,37 @@
+import boto3
+
+def lambda_handler(event, context):
+    # Get the name of the new Amazon S3 bucket
+    bucket_name = event['detail']['name']
+
+    # Create an Amazon S3 client and resource object
+    s3_client = boto3.client('s3')
+    s3_resource = boto3.resource('s3')
+
+    # Get the newly created bucket's tags
+    bucket_tags = s3_client.get_bucket_tagging(Bucket=bucket_name)
+
+    if "mfa-delete" in [tag["Key"] for tag in bucket_tags["TagSet"]]:
+        # Enable versioning for the bucket
+        s3_resource.BucketVersioning(bucket_name).enable()
+
+        # Set MFA Delete configuration for the bucket
+        mfa_delete_config = {
+            'MFADelete': 'Enabled',
+            'Days': 7
+        }
+        s3_client.put_bucket_mfa_delete(
+            Bucket=bucket_name,
+            MFADelete=mfa_delete_config
+        )
+
+    return {
+        'statusCode': 200,
+        'body': 'Enforced MFA delete successfully'
+    }
+
+
+#This code listens for Amazon S3 create bucket events, and upon detection of an event, grabs the name of the newly created Amazon S3 bucket. Then, it creates client and resource objects to modify the bucket settings, including enabling versioning on the bucket and configuring MFA (multi-factor authentication) delete options for the bucket by checking for the presence of the "mfa-delete" tag assigned to the bucket. Finally, the function returns a simple confirmation message once the MFA delete enforcement is successful.
+
+Note that this script should be properly configured with an appropriate IAM role and trigger events to function correctly within the AWS Lambda environment.
+
