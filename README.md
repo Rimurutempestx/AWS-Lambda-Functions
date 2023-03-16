@@ -24,6 +24,7 @@ A list of basic everyday functions used in AWS Lambda. This repository will be d
 - Access control: You can use Lambda functions to enforce access control policies on your DynamoDB data. For example, you can use Lambda functions to check if a user is authorized to read or write data to a specific table.
 - Event-driven architecture: You can use Lambda functions to create event-driven architectures that respond to changes in DynamoDB data. This can help you build complex workflows that react to real-time events.
 - Data migration: You can use Lambda functions to migrate data from other data stores to DynamoDB. Lambda functions can help you transform data from different formats or handle complex data migrations.
+- Notifications and alerts: You can use Lambda functions to send notifications or alerts based on changes to your DynamoDB data. This can help you create real-time monitoring and alerting systems.
 
 
 
