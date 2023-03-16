@@ -1,0 +1,80 @@
+import boto3
+
+def lambda_handler(event, context):
+
+    # Initialize the clients for Redshift and S3
+    redshift_client = boto3.client('redshift')
+    s3_client = boto3.client('s3')
+
+    # Replace the following values with your own actual values
+    source_cluster_identifier = 'your-source-cluster-identifier'
+    destination_cluster_identifier = 'your-destination-cluster-identifier'
+    bucket_name = 'your-bucket-name'
+    prefix = 'your-prefix/'
+    iam_role = 'arn:aws:iam::your-account-id:role/your-iam-role'
+
+    try:
+        # Create a snapshot of the source cluster
+        response = redshift_client.create_cluster_snapshot(
+            SnapshotIdentifier='snapshot-' + str(int(time.time())),
+            ClusterIdentifier=source_cluster_identifier
+        )
+
+        # Get the snapshot identifier
+        snapshot_identifier = response['Snapshot']['SnapshotIdentifier']
+
+        # Wait for the snapshot to complete
+        while True:
+            response = redshift_client.describe_cluster_snapshots(
+                SnapshotIdentifier=snapshot_identifier,
+                SnapshotType='manual'
+            )
+            status = response['Snapshots'][0]['Status']
+            if status == 'available':
+                break
+            time.sleep(5)
+
+        # Get the snapshot URL
+        response = s3_client.generate_presigned_url(
+            ClientMethod='get_object',
+            Params={
+                'Bucket': bucket_name,
+                'Key': prefix + snapshot_identifier + '.bin'
+            },
+            ExpiresIn=3600,
+            HttpMethod='GET'
+        )
+        snapshot_url = response.split('?')[0]
+
+        # Copy the snapshot to the destination cluster
+        response = redshift_client.restore_from_cluster_snapshot(
+            ClusterIdentifier=destination_cluster_identifier,
+            SnapshotIdentifier=snapshot_identifier,
+            SnapshotClusterIdentifier=source_cluster_identifier,
+            # Replace the following values with your own actual values
+            Port=5439,
+            AvailabilityZone='us-west-2c',
+            AllowVersionUpgrade=True,
+            PubliclyAccessible=False,
+            VpcSecurityGroupIds=[
+                'sg-0123456789abcdef'                
+            ],
+            IamRoles=[
+                iam_role
+            ]
+        )
+
+        return {
+            'statusCode': 200,
+            'body': json.dumps('Data replicated to other Redshift clusters successfully')
+        }
+
+    except Exception as e:
+        print(e)
+        return {
+            'statusCode': 400,
+            'body': json.dumps('Error replicating data to other Redshift clusters')
+        }
+        
+        # a python script for an AWS Lambda function that will replicate data to other Amazon Redshift clusters. Note: Note: Before executing this code, you need to set up an Amazon S3 bucket and an IAM Role with write permission to that bucket. You also need to make sure that your Redshift clusters are in the same VPC and have the necessary security groups set up.
+        
