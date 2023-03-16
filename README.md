@@ -6,5 +6,6 @@ A list of basic everyday functions used in AWS Lambda. This repository will be d
 - Image resizing: Lambda functions can be used to resize images stored in S3 buckets.
 - File processing: Lambda functions can be triggered to process files as soon as they are uploaded to S3 buckets.
 - Data transformation: Lambda functions can transform data files in S3 buckets to different formats for use in other applications.
+- Real-time data processing: Lambda functions can be triggered in real-time to process data stored in S3 buckets as soon as it's added or updated.
 
 
