@@ -1,0 +1,66 @@
+import boto3
+
+# create an s3 client with default settings
+redshift = boto3.client('redshift')
+kinesis = boto3.client('kinesis')
+
+def lambda_handler(event, context):
+    
+    # set up the parameters for the COPY command
+    copy_params = {
+        'delimiter': ',',
+        'ignoreheaderlines': 1,
+        'replace': True,
+        'truncatecolumns': True,
+        'region': 'us-west-2', # replace with your region
+        'credentials': 'aws_iam_role=arn:aws:iam::<ACCOUNT_ID>:role/<ROLENAME>' # replace with your IAM role ARN and role name
+    }
+
+    # specify source and destination details (bucket, key, region, etc.)
+    stream_arn = event['Events'][0]['KinesisStreamArn']
+    stream_name = stream_arn.split('/')[-1]
+    rs_table = 'my_redshift_table'
+    kds_shard_id = event['Events'][0]['KinesisRecordMetadata']['ShardId']
+    
+    try:
+        # get shard iterator for the given shard ID
+        kds_response = kinesis.get_shard_iterator(
+            StreamName=stream_name,
+            ShardId=kds_shard_id,
+            ShardIteratorType='LATEST'
+        )
+
+        # use shard iterator to read records from the Kinesis stream
+        kds_iterator = kds_response['ShardIterator']
+        kds_response = kinesis.get_records(ShardIterator=kds_iterator)
+        
+        # write data to S3 in CSV format
+        s3_result_key = '/'.join(('uploaded', 'data.csv'))
+        s3_result_bucket = 'my_s3_bucket'
+
+        # prepare data for the COPY command
+        copy_params['s3_bucket'] = s3_result_bucket
+        copy_params['s3_key'] = "s3://{}/{}".format(s3_result_bucket, s3_result_key)
+        copy_params['tablename'] = rs_table
+
+        # write data to S3
+        s3_client = boto3.client('s3')
+        s3_client.put_object(Bucket=s3_result_bucket, Key=s3_result_key, Body='data') # replace 'data' with actual data
+
+        # execute COPY command to load data into Redshift
+        rs_copy_command = 'COPY {} FROM \'{}\' WITH {}'.format(rs_table, copy_params['s3_key'], str(copy_params))
+        redshift.execute_statement(ClusterIdentifier='my-redshift-cluster', Database='my-database', Sql=rs_copy_command)
+
+        return {
+            'statusCode': 200,
+            'body': 'Data loaded successfully.'
+        }
+    except Exception as e:
+        print(e)
+        return {
+            'statusCode': 400,
+            'body': 'Error loading data.'
+        }
+        
+        # an example python script for a Lambda function that will load data from Amazon Kinesis into Amazon Redshift when the function is executed.
+        Make sure to replace the placeholders with your own values before running the code.
