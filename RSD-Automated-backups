@@ -1,0 +1,43 @@
+import boto3
+from datetime import datetime, timedelta
+
+def lambda_handler(event, context):
+
+    # Define AWS resources
+    rds = boto3.client('rds')
+    s3 = boto3.client('s3')
+
+    # Set backup retention period (in days)
+    retention_period = 90
+    
+    # Get list of all RDS instances
+    instances = rds.describe_db_instances()
+
+    for instance in instances['DBInstances']:
+        db_instance_name = instance['DBInstanceIdentifier']
+
+        # Get latest snapshot info 
+        snapshot = rds.describe_db_snapshots(DBSnapshotIdentifier=db_instance_name)['DBSnapshots'][0]
+
+        # Get age of latest snapshot
+        snapshot_age = datetime.now(snapshot['SnapshotCreateTime'].tzinfo) - snapshot['SnapshotCreateTime']
+        
+        if snapshot_age > timedelta(days=retention_period):
+            # If latest snapshot is older than retention period, create new snapshot
+            timestamp = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+            snapshot_name = f"{db_instance_name}-backup-{timestamp}"
+            response = rds.create_db_snapshot(DBSnapshotIdentifier=snapshot_name, DBInstanceIdentifier=db_instance_name)
+
+            # Upload snapshot file to S3 bucket
+            s3.upload_file(snapshot_name, 'your-s3-bucket', snapshot_name)
+
+    return {
+        'statusCode': 200,
+        'body': json.dumps('RDS backup successfully created and uploaded to S3')
+    }
+    
+    # This script uses the Boto3 AWS SDK to interact with AWS resources. It creates a new snapshot of each RDS database if the latest snapshot is older than the defined retention period (retention_period), and then uploads the snapshot file to an S3 bucket specified by 'your-s3-bucket'. Remember to replace this placeholder value with your actual S3 bucket name.
+
+Note that you will need to configure appropriate IAM permissions for the Lambda execution role in order to access RDS and S3 resources.
+    
+    
