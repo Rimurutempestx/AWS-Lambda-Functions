@@ -1,0 +1,27 @@
+import boto3
+
+def lambda_handler(event, context):
+    rds = boto3.client('rds')
+
+    # Replace the values below with your DB instance identifier
+    db_identifier = 'your-db-identifier'
+
+    # Apply any necessary optimizations
+    response = rds.modify_db_instance(
+        DBInstanceIdentifier=db_identifier,
+        ApplyImmediately=True,
+        PerformanceInsightsEnabled=True,
+        MonitoringInterval=60,
+        EnableEnhancedMonitoring=True,
+        PromotionTier=15,
+        EnablePerformanceInsights=True
+    )
+
+    return {
+        'statusCode': 200,
+        'body': 'RDS performance optimization complete!'
+    }
+
+# This is an example Python script for a Lambda function that optimizes database performance for an Amazon RDS instance. This Lambda function uses the boto3 library to interact with the RDS API. We first create a client object for RDS using boto3.client('rds'). We then specify the DB instance ID and apply the necessary optimizations by calling rds.modify_db_instance(). Finally, we return a success message in our response.
+
+Note: this script doesn't consider every situation where there is optionality for parameter suply depending on the user case.
