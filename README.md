@@ -3,7 +3,7 @@ A list of basic everyday functions used in AWS Lambda. This repository will be d
 
 ## S3 (Simple Storage Service)
 
-- Image resizing - Lambda functions can be used to resize images stored in S3 buckets.
+- Image Resizing - Lambda functions can be used to resize images stored in S3 buckets.
 - 
 
 
