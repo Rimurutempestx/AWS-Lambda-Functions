@@ -1,0 +1,52 @@
+import datetime
+import json
+import boto3
+
+def lambda_handler(event, context):
+    
+    # Set variables
+    redshift_cluster_identifier = 'my-redshift-cluster'
+    s3_bucket_name = 'my-s3-bucket'
+    s3_key_prefix = 'redshift_backup/'
+
+    # Create AWS clients
+    redshift = boto3.client('redshift')
+    s3 = boto3.client('s3')
+
+    # Get the date for today
+    now = datetime.datetime.now()
+    today_date_string = now.strftime("%Y-%m-%d")
+
+    # Get a list of databases in the Redshift cluster
+    db_names = [db['DBName'] for db in redshift.describe_databases(ClusterIdentifier=redshift_cluster_identifier)['Databases']]
+
+    # Loop through each database and create a S3 object for each one
+    for db_name in db_names:
+
+        # Set object names
+        object_key = s3_key_prefix + db_name + '/' + today_date_string + '_backup.sql.gz'
+
+        # Create the SQL query for backing up the database
+        sql_query = "UNLOAD ('SELECT * FROM %s') TO 's3://%s/%s' CREDENTIALS 'aws_iam_role=arn:aws:iam::012345678901:role/MyRedshiftRole' GZIP ALLOWOVERWRITE;" % (db_name, s3_bucket_name, object_key)
+
+        # Execute the SQL query
+        response = redshift.execute_statement(
+            ClusterIdentifier=redshift_cluster_identifier,
+            Sql=sql_query
+        )
+
+        # Output the response to CloudWatch Logs
+        print(json.dumps(response))
+
+    return {
+        'statusCode': 200,
+        'body': json.dumps('Amazon Redshift Backup Complete.')
+    }
+
+# A Python script for an AWS Lambda function that backup Amazon Redshift data into an S3 bucket every 10 days. This script uses Boto3 to interact with both Amazon Redshift and Amazon S3. It first sets some variables to define the Redshift cluster to use, the S3 bucket to store the backups, and creates the AWS clients.
+
+Next, it gets a list of databases in Redshift cluster, generates a unique object key name for each database based on current date, and finally executes an UNLOAD command including select statement and S3 bucket location of backups.
+
+The generated backup files will be stored in "my-s3-bucket" under "redshift_backup//_backup.sql.gz".
+
+Note: This script assumes the use of credentials provided by IAM role "MyRedshiftRole", so you'll need to create this role and provide necessary permissions to access Amazon Redshift and Amazon S3 services. Also make sure to schedule this function to run every 10 days using Amazon CloudWatch events or any other scheduling mechanism.
