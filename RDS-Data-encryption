@@ -1,0 +1,34 @@
+import boto3
+
+def lambda_handler(event, context):
+    # Create RDS client
+    rds = boto3.client('rds')
+
+    # Replace 'db-instance-name' with your actual database instance name
+    db_instance_name = 'db-instance-name'
+
+    try:
+        # Enable encryption at rest for the RDS instance
+        rds.modify_db_instance(
+            DBInstanceIdentifier=db_instance_name,
+            StorageEncrypted=True,
+            ApplyImmediately=True
+        )
+
+        return {
+            'statusCode': 200,
+            'body': json.dumps('Encryption at rest enabled successfully')
+        }
+    except Exception as e:
+        print(e)
+        return {
+            'statusCode': 404,
+            'body': json.dumps('Error occurred while enabling encryption at rest')
+        }
+
+# This script is an AWS Lambda function in Python that enables encryption of data at rest for an Amazon RDS database.
+
+It uses boto3 to create an RDS client, and then modifies the instance to enable storage encryption. The DBInstanceIdentifier parameter specifies the database instance to modify, and StorageEncrypted=True and ApplyImmediately=True enable and apply the encryption immediately.
+
+The function returns a response indicating whether encryption at rest was enabled successfully or if an error occurred.
+
