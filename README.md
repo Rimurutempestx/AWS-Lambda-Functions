@@ -57,6 +57,7 @@ A list of basic everyday functions used in AWS Lambda. This repository will be d
 
 - Query scheduling: You can use Lambda functions to schedule and execute Redshift queries on a regular basis. This can help you automate reporting or other data-related tasks.
 - Data transformations: You can use Lambda functions to transform data before loading it into Redshift. This can include tasks such as data validation, normalization, and data type conversions.
+- Data loading:  You can use Lambda functions to load data into Redshift from a variety of sources. This can include tasks such as integrating with S3, Kinesis, or other data sources.
 
 
 
