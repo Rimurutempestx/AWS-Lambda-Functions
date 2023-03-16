@@ -1,0 +1,48 @@
+import boto3
+
+# S3 bucket name to monitor
+bucket_name = 'my-bucket'
+
+# Storage limit (in bytes)
+limit = 50 * 1024 * 1024 * 1024
+
+def lambda_handler(event, context):
+
+    # Create S3 client
+    s3 = boto3.client('s3')
+
+    # Get current usage
+    response = s3.list_objects_v2(Bucket=bucket_name)
+    total_bytes = sum(item['Size'] for item in response['Contents'])
+    
+    # Check if limit has been reached
+    if total_bytes > limit:
+        # Delete all objects in the bucket
+        objects = s3.list_objects_v2(Bucket=bucket_name)
+        if 'Contents' in objects:
+            s3.delete_objects(
+                Bucket=bucket_name,
+                Delete={
+                    'Objects': [ {'Key': obj['Key']} for obj in objects['Contents']]
+                }
+            )
+
+        # Delete the bucket
+        s3.delete_bucket(Bucket=bucket_name)
+
+        print("Bucket deleted successfully.")
+
+        return {
+            'statusCode': 200,
+            'body': "Bucket deleted successfully."
+        }
+
+    else:
+        print("Bucket size is below the limit.")
+        return {
+            'statusCode': 200,
+            'body': "Bucket size is below the limit."
+        }
+        
+        # This is an example Python script for AWS Lambda function that automatically deletes a S3 bucket when the storage reaches over 50GB:
+        Note: This script is just an example and should be used with caution. Deleting a bucket will delete all the data stored in it permanently. Make sure to replace my-bucket and limit with your actual values.
