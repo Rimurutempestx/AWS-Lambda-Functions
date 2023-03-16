@@ -1,0 +1,62 @@
+import boto3
+
+# Define the client and resource for RDS
+rds_client = boto3.client('rds')
+rds_resource = boto3.resource('rds')
+
+def lambda_handler(event, context):
+    
+    # Replace 'db-instance-id' with your actual RDS instance ID
+    db_instance_id = 'db-instance-id'
+    
+    try:
+        # Get the encrypted status of the RDS instance
+        db_instance = rds_resource.DBInstance(db_instance_id)
+        encrypted = db_instance.storage_encrypted
+        
+        # If the instance is not encrypted, enable encryption using AWS KMS
+        if not encrypted:
+            response = rds_client.modify_db_instance(
+                DBInstanceIdentifier=db_instance_id,
+                StorageEncrypted=True,
+                ApplyImmediately=True
+            )
+            print(response)
+            
+        # Get the current compliance attributes
+        current_tags = rds_client.list_tags_for_resource(
+            ResourceName=rds_resource.DBInstance(db_instance_id).arn
+        )
+        current_compliance_tag_value = ''
+        for tag in current_tags['TagList']:
+            if tag['Key'] == 'compliance':
+                current_compliance_tag_value = tag['Value']
+        
+        # Check to see if the compliance tag value is correct
+        if current_compliance_tag_value != 'HIPAA':
+            # If not, update the compliance attribute
+            response = rds_client.add_tags_to_resource(
+                ResourceName=rds_resource.DBInstance(db_instance_id).arn,
+                Tags=[
+                    {
+                        'Key': 'compliance',
+                        'Value': 'HIPAA'
+                    },
+                ]
+            )
+            print(response)
+            
+        return {
+            "statusCode": 200,
+            "body": "RDS database is now HIPAA-compliant"
+        }
+        
+    except Exception as e:
+        print(e)
+        return {
+            "statusCode": 500,
+            "body": "Error updating RDS database to be HIPAA-compliant."
+        }
+        
+        # Note that this script assumes you have already set up an appropriate IAM role with the necessary permissions to access RDS and S3 resources. The script checks whether the RDS instance is encrypted and updates the encryption status if needed. It also checks if there is a compliance tag named 'HIPAA' and updates it if necessary.
+        
