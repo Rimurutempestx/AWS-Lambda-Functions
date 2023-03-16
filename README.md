@@ -51,6 +51,7 @@ A list of basic everyday functions used in AWS Lambda. This repository will be d
 - Event-driven architectures: You can use Lambda functions to create event-driven architectures in EKS, enabling you to respond to changes in your environment or application.
 - Monitoring: You can use Lambda functions to monitor your EKS clusters and applications, enabling you to identify and address issues in real-time.
 - Security: You can use Lambda functions to automate security tasks such as patching and vulnerability scanning in EKS, helping you to keep your application and infrastructure secure.
+- Compliance: You can use Lambda functions to automate compliance tasks such as auditing and reporting in EKS, helping you to maintain compliance with industry standards and regulations.
 
 
 
