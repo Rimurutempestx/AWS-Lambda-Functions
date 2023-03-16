@@ -1,0 +1,48 @@
+import json
+import boto3
+
+def lambda_handler(event, context):
+    # Define the primary and secondary RDS instances
+    primary_instance_identifier = 'primary-instance'
+    secondary_instance_identifier = 'secondary-instance'
+
+    # Create RDS client
+    rds = boto3.client('rds')
+
+    # Get details of primary instance
+    primary_instance = rds.describe_db_instances(DBInstanceIdentifier=primary_instance_identifier)['DBInstances'][0]
+    primary_status = primary_instance['DBInstanceStatus']
+
+    # Perform failover if the primary instance is down
+    if primary_status == 'stopped':
+        # Get details of secondary instance
+        secondary_instance = rds.describe_db_instances(DBInstanceIdentifier=secondary_instance_identifier)['DBInstances'][0]
+
+        # Modify secondary instance to become the new primary
+        rds.modify_db_instance(
+            DBInstanceIdentifier=secondary_instance_identifier,
+            PromotionTier=1
+        )
+
+        # Wait for modification to complete
+        rds.get_waiter('db_instance_available').wait(DBInstanceIdentifier=secondary_instance_identifier)
+
+        # Reboot old primary instance as new secondary
+        rds.reboot_db_instance(
+            DBInstanceIdentifier=primary_instance_identifier
+        )
+
+        return {
+            'statusCode': 200,
+            'body': json.dumps('Failover completed successfully')
+        }
+    else:
+        return {
+            'statusCode': 200,
+            'body': json.dumps('Primary instance is running')
+        }
+        
+        # This script checks the status of a primary Amazon RDS instance and performs a failover to a secondary instance if the primary instance is down. The failover is done by promoting the secondary instance to be the new primary instance and rebooting the old primary instance as the new secondary. The script uses the Boto3 library to interact with AWS APIs.
+
+
+        
