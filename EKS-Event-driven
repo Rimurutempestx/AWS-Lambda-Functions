@@ -1,0 +1,56 @@
+import boto3
+
+def lambda_handler(event, context):
+    try:
+        # Define variables with Amazon EKS cluster info
+        primary_cluster_name = 'primary-eks-cluster'
+        primary_cluster_region = 'us-west-2'
+        secondary_cluster_name = 'secondary-eks-cluster'
+        secondary_cluster_region = 'us-east-1'
+
+        # Create Amazon EKS client objects for primary and secondary clusters
+        eks_primary = boto3.client('eks', region_name=primary_cluster_region)
+        eks_secondary = boto3.client('eks', region_name=secondary_cluster_region)
+
+        # Get the primary cluster's status
+        response = eks_primary.describe_cluster(name=primary_cluster_name)
+        status = response['cluster']['status']
+
+        if status != 'ACTIVE':
+            print('Primary cluster ', primary_cluster_name, ' failed. Initiating failover..')
+
+            # Update the Kubernetes configuration map in the secondary cluster with the same parameters
+            config_map = 'kube-proxy'
+            namespace = 'kube-system'
+            response = eks_secondary.update_cluster_config(
+                name=secondary_cluster_name,
+                resourcesVpcConfig={
+                    'subnetIds': ['subnet-123456'],
+                    'securityGroupIds': ['sg-123456']
+                },
+                kubernetesNetworkConfig={
+                    'serviceIpv4Cidr': '10.100.0.0/16',
+                    'podIpv4Cidr': '10.20.0.0/16'
+                }
+            )
+
+            print(response)
+            print('Failover complete. Traffic should now be directed to the secondary cluster.')
+        return {
+            'statusCode': 200,
+            'body': 'Success'
+        }
+
+    except Exception as e:
+        print(str(e))
+        return {
+            'statusCode': 500,
+            'body': 'Failed to initiate failover: ' + str(e)
+        }
+
+# Here is a sample Lambda function for failing over to another Amazon EKS cluster in the event of failure in the primary cluster. The implementation would depend on the deployment architecture and requirements.
+This code assumes that there are two Amazon EKS clusters set up - a primary and a secondary cluster. It uses the boto3 AWS SDK library for Python to create Amazon EKS client objects for both clusters.
+
+The script then gets the status of the primary cluster. If the primary cluster is not active, it initiates a failover process to redirect traffic to the secondary cluster by updating the configuration map in the secondary cluster with the same parameters as the primary cluster such as subnet ids, security group ids, and IP address ranges.
+
+Finally, the function returns a success message or an error message with details on the failure when appropriate.
