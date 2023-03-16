@@ -1,0 +1,37 @@
+import json
+import boto3
+
+sns = boto3.client('sns')
+topic_arn = 'your-SNS-topic-arn'
+comprehend = boto3.client('comprehend')
+
+def lambda_handler(event, context):
+    try:
+        # iterate over records in event stream
+        for record in event['Records']:
+            # get new image data from dynamodb stream and convert to text
+            new_item = record['dynamodb']['NewImage']
+            text = ''
+            for key in new_item.keys():
+                text += new_item[key]['S'] + ' '
+
+           # send text to comprehend for analysis
+            response = comprehend.detect_sentiment(Text=text, LanguageCode='en')
+            sentiment = response['Sentiment']
+
+            # publish message to SNS topic with sentiment result
+            message = {"message": "New sentiment analysis result", "sentiment": sentiment}
+            sns.publish(TopicArn=topic_arn, Message=json.dumps({'default': json.dumps(message)}), MessageStructure='json')
+        
+        return {
+            'statusCode': 200,
+            'body': json.dumps('Data analyzed successfully')
+        }
+    except Exception as e:
+        print(e)
+        return {
+            'statusCode': 404,
+            'body': json.dumps('Error occurred while analyzing data')
+        }
+        
+        # This script makes use of the DynamoDB Stream and Comprehend APIs along with SNS to notify specified topic about the sentiment analysis of data sent via dynamodb streams. It extracts text from the NewImage object in the DynamoDB stream, passes it through Amazon Comprehend to detect sentiments and then publish the sentiment result of the object added to the DynamoDB table to the specified SNS topic.
