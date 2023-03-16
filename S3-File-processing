@@ -1,0 +1,38 @@
+import os
+import boto3
+
+s3 = boto3.client('s3')
+
+def lambda_handler(event, context):
+    # Get the bucket name and file key from the event
+    bucket_name = event['Records'][0]['s3']['bucket']['name']
+    file_key = event['Records'][0]['s3']['object']['key']
+
+    if file_key == 'specific-file.txt':
+        # Read the file data from S3
+        s3_response = s3.get_object(Bucket=bucket_name, Key=file_key)
+        file_content = s3_response['Body'].read().decode('utf-8')
+        
+        # Process the file data
+        processed_content = file_content.upper()
+        
+        # Upload the processed data to a new file in S3
+        new_file_key = os.path.splitext(file_key)[0] + '_processed.txt'
+        s3.put_object(Bucket=bucket_name, Key=new_file_key, Body=processed_content)
+        
+        return {
+            'statusCode': 200,
+            'body': json.dumps('File processed successfully')
+        }
+    else:
+        return {
+            'statusCode': 200,
+            'body': json.dumps('Skip processing this file')
+        }
+
+
+# This script uses the boto3 library to interact with S3. It first retrieves the bucket name and file key from the event object passed to the function. If the file key matches the specific file we want to process, it reads the file content from S3, processes it (in this case, converting the text to all uppercase), and uploads the processed data to a new file in the same S3 bucket.
+
+If the file key does not match the desired file, the function skips processing and returns a success response.
+
+
