@@ -1,0 +1,50 @@
+import boto3
+import psycopg2
+from datetime import datetime, timedelta
+
+s3 = boto3.resource('s3')
+client_rs = boto3.client('redshift')
+
+bucket_name = '<bucket-name>'
+cluster_id = '<cluster-id>'
+database = '<database>'
+user = '<user>'
+password = '<password>'
+port = <port-number>
+host = '<host>'
+
+def lambda_handler(event, context):
+    current_time = datetime.utcnow()
+    two_hours_ago = current_time - timedelta(hours=2)
+    
+    # Query Redshift
+    rs_conn = psycopg2.connect(
+        host=host,
+        dbname=database,
+        user=user,
+        password=password,
+        port=port,
+    )
+    
+    with rs_conn.cursor() as cur:
+        # Change query to your own custom Redshift query
+        cur.execute("SELECT * FROM <table> WHERE <date_col> BETWEEN '{}' AND '{}'".format(two_hours_ago, current_time))
+        
+        rows = cur.fetchall()
+    
+    # Save results to S3 bucket
+    s3_object_key = 'query_results_{}.csv'.format(current_time.strftime('%Y-%m-%d-%H-%M-%S'))
+    bucket = s3.Bucket(bucket_name)
+    result_csv = '\n'.join([','.join(map(str, row)) for row in rows])
+    bucket.put_object(Key=s3_object_key, Body=result_csv)
+
+    return {
+        'statusCode': 200,
+        'body': 'Query executed at {} and results saved to S3 bucket {}'.format(current_time, bucket_name)
+    }
+    
+    #  Python script for an AWS Lambda function that will execute Redshift queries every 2 hours and store the results in an Amazon S3 bucket. 
+    You'll need to replace the bucket_name, cluster_id, database, user, password, port, and host values with your own Redshift connection details and S3 bucket information.
+
+This code also assumes that you have already installed the boto3 and psycopg2 packages in the AWS Lambda environment.
+    
