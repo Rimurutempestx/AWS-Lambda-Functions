@@ -1,0 +1,42 @@
+import boto3
+import json
+import logging
+
+s3 = boto3.client('s3')
+rds = boto3.client('rds')
+
+# Define the database instance ID and S3 bucket name
+instance_id = 'your-instance-id'
+bucket_name = 'your-bucket-name'
+
+def lambda_handler(event, context):
+    # Get the event message from CloudWatch Logs
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    logger.info(json.dumps(event))
+
+    # Get the RDS cluster identifier for the instance
+    response = rds.describe_db_instances(DBInstanceIdentifier=instance_id)
+    cluster_identifier = response['DBInstances'][0]['DBClusterIdentifier']
+
+    # Get the audit logs from the RDS cluster
+    response = rds.download_db_log_file_portion(
+        DBInstanceIdentifier=instance_id,
+        LogFileName='error/postgresql.log',
+        NumberOfLines=500
+    )
+
+    # Store the audit logs in an S3 bucket
+    s3.put_object(
+        Body=response['LogFileData'],
+        Bucket=bucket_name,
+        Key=cluster_identifier + '/postgresql.log'
+    )
+
+    return {
+        'statusCode': 200,
+        'body': json.dumps('Log data added to S3 successfully')
+    }
+
+# This script listens to the changes and logs from the PostgreSql.log file. When it detects any changes, the script will download these changes and save them into an S3 bucket using the put_object API call.
+
