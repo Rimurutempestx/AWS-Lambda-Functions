@@ -60,6 +60,7 @@ A list of basic everyday functions used in AWS Lambda. This repository will be d
 - Data loading:  You can use Lambda functions to load data into Redshift from a variety of sources. This can include tasks such as integrating with S3, Kinesis, or other data sources.
 - Data replication: You can use Lambda functions to replicate data between Redshift clusters or to other data stores. This can help you create data pipelines or to move data to other systems for analysis.
 - Data cleansing: You can use Lambda functions to cleanse data before loading it into Redshift. This can include tasks such as removing duplicates, fixing errors, or removing invalid data.
+- Backup and recovery: You can use Lambda functions to automate Redshift backup and recovery tasks. This can include creating backups on a regular schedule, restoring data from backups, and verifying backups.
 
 
 
