@@ -1,0 +1,48 @@
+import json
+import boto3
+
+def lambda_handler(event, context):
+
+    # Initialize variables
+    client = boto3.client('iam')
+    dynamodb = boto3.resource('dynamodb')
+    table_name = 'your-table-name'
+    user_arn = event['user_arn']
+
+    try:
+        # Get IAM policy for user
+        response = client.get_user_policy(UserName=user_arn)
+        policy = json.loads(response['PolicyDocument'])
+
+        # Check if user has read access to table
+        if 'Effect' in policy and policy['Effect'] == 'Allow':
+            if 'Action' in policy and 'dynamodb:GetItem' in policy['Action']:
+                # User has access to read table
+                table = dynamodb.Table(table_name)
+                items = table.scan()
+
+                return {
+                    'statusCode': 200,
+                    'body': json.dumps(items)
+                }
+            else:
+                # User does not have access to read table
+                return {
+                    'statusCode': 403,
+                    'body': json.dumps('Access denied. User does not have read access to table.')
+                }
+        else:
+            # User does not have any policy defined
+            return {
+                'statusCode': 403,
+                'body': json.dumps('Access denied. User does not have any policy defined.')
+            }
+
+    except Exception as e:
+        print(e)
+        return {
+            'statusCode': 500,
+            'body': json.dumps(str(e))
+        }
+        
+        # This function takes an event object with a user_arn property, which is the ARN of the user making the request. The function then uses the AWS SDK to get the user's IAM policy and check if they have read access to a specified DynamoDB table. If the user has read access, the function scans the table and returns the items found. If the user does not have read access, the function returns a 403 Forbidden error. If the user does not have any policy defined, the function also returns a 403 error.
