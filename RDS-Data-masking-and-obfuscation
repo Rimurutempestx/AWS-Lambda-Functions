@@ -1,0 +1,49 @@
+import boto3
+import logging
+
+
+rds = boto3.client('rds')
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+
+def lambda_handler(event, context):
+    # Replace 'db-instance-id' with your actual RDS instance ID
+    db_instance_id = 'db-instance-id'
+
+    try:
+        # Get list of DB instances and find target instance
+        instances = rds.describe_db_instances()
+        target_instance = next((i for i in instances['DBInstances'] if i['DBInstanceIdentifier'] == db_instance_id), None)
+
+        # Check if instance exists
+        if not target_instance:
+            raise ValueError(f"Instance {db_instance_id} not found")
+
+        # Replace '[table-name]' with your actual table name
+        sql = f"""
+             UPDATE [table-name]
+             SET sensitive_data = REPLACE(sensitive_data, 'old_value', 'new_value')
+        """
+
+        # Execute SQL statement to mask or obfuscate sensitive data
+        logger.info(f"Executing SQL statement: {sql}")
+        response = rds.execute_statement(
+            Database=target_instance['DBName'],
+            DbClusterOrInstanceArn=target_instance['DBInstanceArn'],
+            Sql=sql
+        )
+
+        logger.info(f"Successfully masked sensitive data in RDS instance {db_instance_id}")
+        return {
+            'statusCode': 200,
+            'body': 'Masked sensitive data in RDS instance'
+        }
+    except Exception as e:
+        logger.error(f"Error occurred: {e}")
+        return {
+            'statusCode': 500,
+            'body': f"Error occurred: {e}"
+        }
+        
+        # This code connects to RDS using the boto3 library, then executes an SQL statement to delete or replace sensitive data based on a pre-specified set of rules.
