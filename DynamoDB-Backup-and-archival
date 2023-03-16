@@ -1,0 +1,27 @@
+import boto3
+
+def lambda_handler(event, context):
+    # Define the DynamoDB table and the AWS region where it is located
+    dynamodb = boto3.resource('dynamodb', region_name='us-west-2')
+    table = dynamodb.Table('my-dynamodb-table')
+
+    # Query the DynamoDB table to get all items
+    response = table.scan()
+    items = response['Items']
+
+    # Create an S3 client and define the S3 bucket
+    s3 = boto3.client('s3', region_name='us-west-2')
+    bucket_name = 'my-s3-bucket-name'
+
+    # Iterate through all items and upload them to Amazon S3 Glacier Deep Archive
+    for item in items:
+        file_key = item['id'] + '.json'
+        s3.upload_file(file_key, bucket_name, file_key, ExtraArgs={'StorageClass': 'DEEP_ARCHIVE'})
+
+    return {
+        'statusCode': 200,
+        'body': 'Data has been moved to S3 Glacier Deep Archive'
+    }
+
+# This code defines a Lambda function that extracts data from a DynamoDB table (my-dynamodb-table), retrieves all items, creates an S3 client, and then loops through the items, uploading them to an S3 bucket (my-s3-bucket-name) with the DEEP_ARCHIVE storage class. Once the data has been uploaded, the function returns a status code of 200, along with a message indicating that the data has been moved to S3 Glacier Deep Archive.
+
