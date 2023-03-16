@@ -1,0 +1,20 @@
+import boto3
+
+def search_pickle_in_s3_bucket(event, context):
+    # Get the object from the event and show its content type
+    s3 = boto3.client('s3')
+    bucket_name = event['Records'][0]['s3']['bucket']['name']
+    key = event['Records'][0]['s3']['object']['key']
+    
+    try:
+        response = s3.get_object(Bucket=bucket_name, Key=key)
+        content = response['Body'].read().decode('utf-8')
+        
+        if 'pickle' in content:
+            print(f'File {key} contains the keyword "pickle".')
+        else:
+            print(f'File {key} does not contain the keyword "pickle".')
+    except Exception as e:
+        print(e)
+
+# This function will be triggered by an S3 event (i.e., whenever a new file is added to the S3 bucket), it will check if the file content contains the keyword "pickle", and then print a message accordingly.
