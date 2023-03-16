@@ -46,6 +46,7 @@ A list of basic everyday functions used in AWS Lambda. This repository will be d
 - Application deployment: You can use Lambda functions to automate the deployment of your applications in EKS. This can include tasks such as building and packaging code, testing, and deploying to production.
 - Continuous Integration/Continuous Deployment (CI/CD): You can use Lambda functions to automate your CI/CD pipelines in EKS, enabling you to continuously deliver new features and updates to your applications.
 - Kubernetes resource management: You can use Lambda functions to manage Kubernetes resources such as pods, services, and deployments. This can include tasks such as creating, updating, and deleting resources.
+- Custom resource management: You can use Lambda functions to manage custom resources in EKS, allowing you to create and manage your own Kubernetes resources.
 
 
 
