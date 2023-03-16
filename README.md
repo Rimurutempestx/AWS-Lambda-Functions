@@ -55,7 +55,7 @@ A list of basic everyday functions used in AWS Lambda. This repository will be d
 
 ## Amazon Redshift
 
-- 
+- Query scheduling: You can use Lambda functions to schedule and execute Redshift queries on a regular basis. This can help you automate reporting or other data-related tasks.
 
 
 
