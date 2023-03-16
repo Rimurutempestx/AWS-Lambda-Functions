@@ -40,4 +40,14 @@ def lambda_handler(event, context):
             'statusCode': 404,
             'body': json.dumps('Error occurred while resizing image')
         }
+        
+        # This script uses the boto3 library to interact with AWS services. When the script is executed, it retrieves an image file from an S3 bucket, resizes it using the Pillow library, and saves the resized image back to the same S3 bucket.
+
+Note that the script assumes the input image is in JPEG format and resizes it to a fixed size of 100x100 pixels. You can modify these settings as needed.
+        
+        
+        
+        
+        
+        
 
