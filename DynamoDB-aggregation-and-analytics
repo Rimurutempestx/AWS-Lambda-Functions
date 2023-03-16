@@ -1,0 +1,45 @@
+import boto3
+import json
+
+def lambda_handler(event, context):
+    
+    # Create Boto3 clients
+    dynamodb = boto3.client('dynamodb')
+    s3 = boto3.client('s3', region_name='your-other-bucket-region')
+    
+    # Replace 'table-name' with your actual table name
+    table_name = 'table-name'
+    
+    try:
+        # Query the DynamoDB table for the five highest numbers
+        response = dynamodb.scan(
+            TableName=table_name,
+            Select='ALL_ATTRIBUTES',
+            Limit=5,
+            ScanIndexForward=False
+        )
+
+        # Extract the items list from the response
+        items_list = response['Items']
+
+        # Convert the items to a JSON string
+        items_json = json.dumps(items_list)
+
+        # Replace 'your-bucket-name' with your actual S3 bucket name
+        bucket_name = 'your-bucket-name'
+
+        # Upload the file to the S3 bucket
+        response = s3.put_object(Body=items_json.encode(), Bucket=bucket_name, Key='top-five-numbers.json')
+
+        return {
+            'statusCode': 200,
+            'body': json.dumps('Top five numbers uploaded to S3 successfully')
+        }
+    except Exception as e:
+        print(e)
+        return {
+            'statusCode': 404,
+            'body': json.dumps('Error occurred while uploading top five numbers to S3')
+        }
+        
+        # This script gets the client objects for Dynamodb and S3. Then, it queries the DynamoDB table for the five highest numbers and retrieves items lists. After that, it converts the obtained items to a JSON string and uploads those to your specified S3 bucket. Event and context are parameters passed into the function by Lambda when it's invoked, but they aren't used in this example. If any error occurs during item retrieval or upload to S3, it returns error messages as response body.
