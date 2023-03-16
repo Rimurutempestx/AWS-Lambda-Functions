@@ -1,0 +1,44 @@
+import boto3
+import json
+
+def lambda_handler(event, context):
+    # Get the event input, which should contain the username and database name
+    print(event)
+    try:
+        username = event['username']
+        database_name = event['database_name']
+    except KeyError:
+        return {'statusCode': 400,
+                'body': json.dumps('Invalid input provided.')}
+
+    # Create an RDS client
+    rds = boto3.client('rds')
+
+    # Call the describe_db_instances API to get information on the RDS instance
+    db_instance_info = rds.describe_db_instances(DBInstanceIdentifier=database_name)
+
+    # Check if the specified username is in the list of authorized users
+    try:
+        authorized_users = db_instance_info['DBInstances'][0]['MasterUsername'] + ',Amazon RDS Enhanced Monitoring,' \
+                           + db_instance_info['DBInstances'][0]['DBSnapshotIdentifier']
+    except KeyError:
+        return {'statusCode': 404,
+                'body': json.dumps('Database not found or inaccessible.')}
+
+    if username not in authorized_users:
+        return {'statusCode': 403,
+                'body': json.dumps('User does not have permission to access this database.')}
+    else:
+        return {'statusCode': 200,
+                'body': json.dumps('User has permission to access this database.')}
+# To use this script, you would need to provide an event input that contains the username and database name you want to check. For example:
+
+Copy
+Insert
+New
+{
+  "username": "myuser",
+  "database_name": "mydatabase"
+}
+
+# The Lambda function will then call the describe_db_instances API to get information on the specified RDS instance, and will check the MasterUsername value and a few other authorized users against the provided username. If the user is not authorized to access the database, the function will return a 403 error. If the user is authorized, the function will return a 200 success code.
