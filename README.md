@@ -33,6 +33,7 @@ A list of basic everyday functions used in AWS Lambda. This repository will be d
 - Automated backup:  You can use Lambda functions to schedule automated backups of your RDS databases. This can help you ensure that your data is always backed up and recoverable.
 - Database replication: You can use Lambda functions to automatically replicate data between multiple RDS instances. This can help you ensure that your data is always available and accessible.
 - Database auditing: You can use Lambda functions to audit database activity in RDS. Lambda functions can help you log changes to your database and identify potential security issues.
+- User management: You can use Lambda functions to manage user access and permissions in RDS. Lambda functions can help you enforce role-based access control and automatically create or delete users.
 
 
 
