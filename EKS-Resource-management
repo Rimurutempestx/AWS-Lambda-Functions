@@ -1,0 +1,37 @@
+import boto3
+from kubernetes import client, config
+
+def lambda_handler(event, context):
+    # Set up the Kubernetes client configuration.
+    config.load_kube_config()
+
+    # Create the Kubernetes api client.
+    api_client = client.CoreV1Api()
+
+    # Replace 'pod-name' with your pod name.
+    pod_name = 'pod-name'
+
+    # Replace 'command' with your command.
+    command = 'restart'
+
+    try:
+        # Get the pod object.
+        pod = api_client.read_namespaced_pod(name=pod_name)
+
+        # Perform the specified command on the pod.
+        if command == 'restart':
+            api_client.delete_namespaced_pod(name=pod_name, body={})
+            api_client.create_namespaced_pod(body=pod.metadata)
+
+        return {
+            'statusCode': 200,
+            'body': 'Command {} executed successfully on pod {}'.format(command, pod_name)
+        }
+    except Exception as e:
+        print(e)
+        return {
+            'statusCode': 404,
+            'body': 'Error occurred while executing command {} on pod {}'.format(command, pod_name)
+        }
+        
+        # This is an example Python script for a Lambda function that can manage K8s pods in Amazon EKS. This is just an example and you may need to modify it according to your specific use case. For example, you may need to add authentication or specify a namespace for the pod.
