@@ -14,4 +14,6 @@ A list of basic everyday functions used in AWS Lambda. This repository will be d
 - Search indexing: Lambda functions can be used to index and search data stored in S3 buckets.
 - Security and compliance: Lambda functions can be used to monitor and enforce security and compliance policies on data stored in S3 buckets.
 
+## Amazon DynamoDB
 
+- Data Validation and reprocessing: You can use Lambda functions to validate or preprocess data before it's stored in DynamoDB. For example, you can use a Lambda function to check if the data meets certain criteria, sanitize user inputs, or transform data into a different format.
