@@ -1,0 +1,56 @@
+import boto3
+import os
+import subprocess
+import tempfile
+
+# AWS API clients
+lambda_client = boto3.client('lambda')
+sts_client = boto3.client('sts')
+eks_client = boto3.client('eks')
+
+# Environment variables
+CLUSTER_NAME = os.environ['EKS_CLUSTER_NAME']
+ROLE_ARN = os.environ['ROLE_ARN']
+FUNCTION_ALIAS = os.environ['LAMBDA_ALIAS']
+
+def lambda_handler(event, context):
+    # Assume the provided IAM role
+    credentials = sts_client.assume_role(RoleArn=ROLE_ARN, RoleSessionName=context.aws_request_id)['Credentials']
+
+    # Configure kubectl to connect to our EKS cluster
+    subprocess.check_call(['aws', 'eks', 'update-kubeconfig', '--name', CLUSTER_NAME])
+
+    # Download the deployment manifest from S3
+    s3 = boto3.resource('s3')
+    bucket_name = event['bucket_name']
+    object_key = event['object_key']
+    with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+        s3.Bucket(bucket_name).download_file(object_key, temp_file.name)
+
+    # Apply the deployment
+    subprocess.check_call(['kubectl', 'apply', '-f', temp_file.name])
+    
+    # Publish new version of this Lambda function
+    response = lambda_client.publish_version(
+        FunctionName=context.function_name,
+        Description='New version',
+        CodeSha256=event['x-amz-meta-sha-256'],
+        RevisionId=context.aws_request_id
+    )
+    
+    # Update the alias to point to the new version
+    lambda_client.update_alias(
+        FunctionName=context.function_name,
+        Name=FUNCTION_ALIAS,
+        FunctionVersion=response['Version']
+    )
+
+    return {
+        'statusCode': 200,
+        'body': json.dumps('Deployment Successful!')
+    }
+    
+    # To deploy an application to an Amazon Elastic Kubernetes Service (EKS) cluster using a Lambda function, we'd first need to create a few resources. We'll need AWS CLI installed and appropriate permissions to run CLI commands.
+
+This is an example Python script that can be used as a starting point for deploying applications to EKS using AWS Lambda. Note: The lambda function code is just an example and needs to be modified based on individual requirements.
+    
