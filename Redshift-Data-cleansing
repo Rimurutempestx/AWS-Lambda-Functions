@@ -1,0 +1,31 @@
+import json
+import boto3
+
+def lambda_handler(event, context):
+    # Get the payload from the incoming Kinesis stream event
+    payload = event['Records'][0]['kinesis']['data']
+    
+    # Decode base64 payload and parse JSON object
+    payload = json.loads(base64.b64decode(payload).decode('utf-8'))
+    
+    # Remove null values from payload
+    payload = {k:v for k,v in payload.items() if v}
+    
+    # Convert all string values to lowercase
+    payload = {k:v.lower() if isinstance(v, str) else v for k,v in payload.items()}
+    
+    # Write payload to Amazon Redshift
+    redshift = boto3.client('redshift')
+    response = redshift.execute_statement(
+        ClusterIdentifier='redshift-cluster-identifier',
+        Database='database-name',
+        Sql=f"INSERT INTO table (col1, col2) VALUES ('{payload['col1']}', '{payload['col2']}');"
+    )
+    
+    return {
+        'statusCode': 200,
+        'body': json.dumps('Data cleansed and loaded to Amazon Redshift successfully')
+    }
+    
+    # An example Python script for a AWS Lambda function that will cleanse data before loading it into Amazon Redshift. This script takes in data from a Kinesis stream event, decodes the payload, removes any null values, converts all string values to lowercase, and then loads the cleaned data into an Amazon Redshift database.
+    
