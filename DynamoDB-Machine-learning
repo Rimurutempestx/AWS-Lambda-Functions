@@ -1,0 +1,57 @@
+import json
+import boto3
+
+def lambda_handler(event, context):
+    # Create S3 and DynamoDB clients
+    s3 = boto3.client('s3')
+    dynamodb = boto3.resource('dynamodb')
+
+    # Replace 'table-name' with your actual table name
+    table_name = 'table-name'
+    
+    # Get the DynamoDB table
+    table = dynamodb.Table(table_name)
+
+    # Replace 'bucket-name' with your actual S3 bucket name
+    bucket_name = 'bucket-name'
+
+    # Read the data from the S3 trigger event
+    try:
+        for record in event['Records']:
+            # Get the key of the uploaded file
+            key = record['s3']['object']['key']
+            
+            # Get the object from S3
+            response = s3.get_object(Bucket=bucket_name, Key=key)
+            data = response['Body'].read().decode('utf-8')
+            
+            # Process the data with the machine learning model
+            result = run_machine_learning_model(data)
+            
+            # Store the result in the DynamoDB table
+            item_data = {
+                'id': key,
+                'result': result
+            }
+            table.put_item(Item=item_data)
+            
+            # Notify the user of the successful processing
+            sns = boto3.client('sns')
+            topic_arn = 'arn:aws:sns:us-east-1:123456789012:notification-topic'
+            message = 'Data processed successfully'
+            sns.publish(TopicArn=topic_arn, Message=message)
+    except Exception as e:
+        print(e)
+        # Notify the user of the error
+        sns = boto3.client('sns')
+        topic_arn = 'arn:aws:sns:us-east-1:123456789012:notification-topic'
+        message = 'Error occurred while processing data: {}'.format(e)
+        sns.publish(TopicArn=topic_arn, Message=message)
+        raise e
+        
+def run_machine_learning_model(data):
+    # Replace this with your actual machine learning processing code
+    result = 'Machine learning result for input data: {}'.format(data)
+    return result
+
+# This Lambda function is triggered by changes to an S3 bucket. When data is uploaded to the bucket, the function reads the data from the S3 object and runs it through a machine learning model. The results are then stored in a DynamoDB table. If any errors occur during processing, the user is notified via SNS.
