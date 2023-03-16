@@ -53,6 +53,10 @@ A list of basic everyday functions used in AWS Lambda. This repository will be d
 - Security: You can use Lambda functions to automate security tasks such as patching and vulnerability scanning in EKS, helping you to keep your application and infrastructure secure.
 - Compliance: You can use Lambda functions to automate compliance tasks such as auditing and reporting in EKS, helping you to maintain compliance with industry standards and regulations.
 
+## Amazon Redshift
+
+- 
+
 
 
 
