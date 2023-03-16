@@ -1,0 +1,50 @@
+import json
+import boto3
+import os
+import subprocess
+
+def lambda_handler(event, context):
+    # Read parameters from environment variables
+    cluster_name = os.environ['CLUSTER_NAME']
+
+    # Initialize EKS client
+    eks = boto3.client('eks')
+
+    try:
+        # Get the current node group name and version of the cluster
+        nodegroup_version = eks.describe_nodegroup(
+            clusterName=cluster_name,
+            nodegroupName='workers'
+        )['nodegroup']['version']
+
+        # Use Trivy to scan worker nodes for vulnerabilities
+        trivy_command = f'trivy image --light kubelet.{nodegroup_version}.amazonaws.com/amazonlinux:2'
+        result = subprocess.run(trivy_command.split(), shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        # Send a notification if vulnerabilities were found
+        vulnerabilities = result.stdout.decode('utf-8')
+        if 'HIGH' in vulnerabilities:
+            sns = boto3.client('sns')
+            message = f'Potential vulnerabilities found in Elastic Kubernetes Service worker nodes: {vulnerabilities}'
+            sns.publish(TopicArn=os.environ['SNS_TOPIC_ARN'], Message=message)
+
+        return {
+            'statusCode': 200,
+            'body': json.dumps('Vulnerability scan completed successfully')
+        }
+
+    except Exception as e:
+        print(e)
+        return {
+            'statusCode': 500,
+            'body': json.dumps('Error occurred during vulnerability scan')
+        }
+        
+        # This is a example Python script for a AWS Lambda function that will scan for vulnerabilities on Amazon Elastic Kubernetes Service (EKS) worker nodes using Trivy.
+        This script imports the necessary libraries and initializes the AWS SDK. It then reads the CLUSTER_NAME environment variable which contains the name of the EKS cluster to monitor.
+
+The script then uses the AWS SDK to retrieve the version number of the worker node group and runs the Trivy container scanning tool against the worker node Amazon Linux image.
+
+If any high or critical vulnerabilities are found, the script sends a notification via Amazon SNS to an SNS topic specified by the SNS_TOPIC_ARN environment variable.
+
+Finally, the script returns a status code indicating whether the scan was successful or not.
