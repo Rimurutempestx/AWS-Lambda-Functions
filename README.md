@@ -27,6 +27,10 @@ A list of basic everyday functions used in AWS Lambda. This repository will be d
 - Notifications and alerts: You can use Lambda functions to send notifications or alerts based on changes to your DynamoDB data. This can help you create real-time monitoring and alerting systems.
 - Machine learning: You can use Lambda functions to integrate machine learning models with DynamoDB. This can help you perform real-time predictions on your data or automate decision-making based on machine learning models.
 
+## RDS (Relational Database Service)
+
+- Data schema updates: You can use Lambda functions to automatically update database schemas in RDS. Lambda functions can help you handle schema migrations and versioning.
+
 
 
 
