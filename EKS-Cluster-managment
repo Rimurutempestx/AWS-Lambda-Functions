@@ -1,0 +1,43 @@
+import boto3
+import json
+
+# Initialize the EKS SDK client and define the cluster name
+eks_client = boto3.client('eks')
+cluster_name = 'my-cluster'
+
+def lambda_handler(event, context):
+    # Get the current number of nodes in the cluster
+    response = eks_client.describe_cluster(name=cluster_name)
+    current_nodes = response['cluster']['scalingConfig']['desiredSize']
+
+    # Determine the new number of nodes to scale to based on event data
+    data = json.loads(event['body'])
+    scale_factor = data['scale_factor']
+    new_nodes = current_nodes * scale_factor
+
+    # Update the cluster size to the new value
+    response = eks_client.update_nodegroup_config(
+        clusterName=cluster_name,
+        nodegroupName='my-node-group',
+        scalingConfig={
+            'minSize': 1,
+            'maxSize': 100,
+            'desiredSize': new_nodes
+        }
+    )
+
+    # Return a response indicating success or failure
+    if response['ResponseMetadata']['HTTPStatusCode'] == 200:
+        return {
+            'statusCode': 200,
+            'body': json.dumps('Cluster scaled successfully to {} nodes.'.format(new_nodes))
+        }
+    else:
+        return {
+            'statusCode': 500,
+            'body': json.dumps('Error scaling cluster.')
+        }
+        
+        # This example code demonstrates how you may write a Lambda function that gets triggered by an event which contains data about the required scaling factor. The code gets the current number of nodes in the cluster using the AWS SDK, calculates the new number of nodes, submits the scaled configuration to update the node group, and returns a response indicating success or failure.
+
+Note: This is just an example and should be modified to meet your specific needs. Also, make sure to assign the appropriate IAM roles and policies to the Lambda function so it can correctly access and interact with your EKS cluster.
