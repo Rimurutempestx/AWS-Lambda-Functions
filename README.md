@@ -9,5 +9,6 @@ A list of basic everyday functions used in AWS Lambda. This repository will be d
 - Real-time data processing: Lambda functions can be triggered in real-time to process data stored in S3 buckets as soon as it's added or updated.
 - Website hosting: Lambda functions can be used to host static websites that are stored in S3 buckets.
 - Archiving: Lambda functions can be used to move files that are stored in S3 buckets to lower cost storage options as they age or are no longer needed.
+- Event-based processing: Lambda functions can be triggered by events occurring in S3 buckets, such as object creation, deletion, or modification.
 
 
