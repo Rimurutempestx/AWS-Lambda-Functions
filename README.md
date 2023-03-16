@@ -42,7 +42,7 @@ A list of basic everyday functions used in AWS Lambda. This repository will be d
 
 ## Amazon EKS (Elastic Kubernetes Service)
 
-- 
+- Cluster management: You can use Lambda functions to manage your EKS clusters by automating tasks such as scaling, monitoring, and backup.
 
 
 
