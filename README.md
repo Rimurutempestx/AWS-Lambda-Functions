@@ -12,5 +12,6 @@ A list of basic everyday functions used in AWS Lambda. This repository will be d
 - Event-based processing: Lambda functions can be triggered by events occurring in S3 buckets, such as object creation, deletion, or modification.
 - Backup and disaster recovery: Lambda functions can be used to backup data stored in S3 buckets and to restore data in case of disasters.
 - Search indexing: Lambda functions can be used to index and search data stored in S3 buckets.
+- Security and compliance: Lambda functions can be used to monitor and enforce security and compliance policies on data stored in S3 buckets.
 
 
