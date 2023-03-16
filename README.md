@@ -25,6 +25,7 @@ A list of basic everyday functions used in AWS Lambda. This repository will be d
 - Event-driven architecture: You can use Lambda functions to create event-driven architectures that respond to changes in DynamoDB data. This can help you build complex workflows that react to real-time events.
 - Data migration: You can use Lambda functions to migrate data from other data stores to DynamoDB. Lambda functions can help you transform data from different formats or handle complex data migrations.
 - Notifications and alerts: You can use Lambda functions to send notifications or alerts based on changes to your DynamoDB data. This can help you create real-time monitoring and alerting systems.
+- Machine learning: You can use Lambda functions to integrate machine learning models with DynamoDB. This can help you perform real-time predictions on your data or automate decision-making based on machine learning models.
 
 
 
