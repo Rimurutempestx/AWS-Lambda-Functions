@@ -50,6 +50,7 @@ A list of basic everyday functions used in AWS Lambda. This repository will be d
 - Scaling: You can use Lambda functions to scale your EKS clusters based on predefined rules or conditions. This can help you ensure that your application can handle increased traffic and demand.
 - Event-driven architectures: You can use Lambda functions to create event-driven architectures in EKS, enabling you to respond to changes in your environment or application.
 - Monitoring: You can use Lambda functions to monitor your EKS clusters and applications, enabling you to identify and address issues in real-time.
+- Security: You can use Lambda functions to automate security tasks such as patching and vulnerability scanning in EKS, helping you to keep your application and infrastructure secure.
 
 
 
