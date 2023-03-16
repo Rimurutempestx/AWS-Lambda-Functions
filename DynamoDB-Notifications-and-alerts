@@ -1,0 +1,37 @@
+import boto3
+import json
+
+sns = boto3.client('sns')
+dynamodb = boto3.resource('dynamodb')
+table_name = 'your-table-name'
+topic_arn = 'your-SNS-topic-arn'
+
+def lambda_handler(event, context):
+
+    message_body = ""
+    record_count = len(event['Records'])
+    
+    for i in event['Records']:
+        table_record = i['dynamodb']['Keys']
+        message_body += f"\nTable Record Changed: {table_record}"
+    
+    try:
+        table = dynamodb.Table(table_name)
+        table_item_count = table.item_count
+
+        sns.publish(
+            TopicArn = topic_arn,
+            Subject = "DynamoDB Table Change",
+            Message = f"Table Name: {table_name}, Item Count: {table_item_count}, Records changed: {record_count} {message_body}"
+        )
+        
+        return {
+            'statusCode': 200,
+            'body': json.dumps('Notification sent successfully')
+        }
+    except Exception as e:
+        print(e)
+        return {
+            'statusCode': 404,
+            'body': json.dumps('Error occurred while sending notification')
+        }
