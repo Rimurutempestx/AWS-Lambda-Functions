@@ -1,0 +1,45 @@
+import json
+import boto3
+
+def lambda_handler(event, context):
+    
+    # Initialize the SNS client
+    sns = boto3.client('sns')
+    
+    # Replace 'topic_arn' with your actual SNS topic ARN
+    topic_arn = 'topic_arn'
+    
+    # Replace 'table-name' with your actual DynamoDB table name
+    table_name = 'table-name'
+    
+    try:
+        # Get the DynamoDB stream ARN
+        dynamodb = boto3.client('dynamodb')
+        response = dynamodb.describe_table(
+            TableName=table_name
+        )
+        stream_arn = response['Table']['LatestStreamArn']
+        
+        # Set up the SNS message
+        message = "There has been a change to the " + table_name + " table."
+        
+        # Publish the SNS message
+        response = sns.publish(
+            TopicArn=topic_arn,
+            Message=json.dumps({'default': json.dumps(message)}),
+            MessageStructure='json'
+        )
+        
+        print(response)
+        return {
+            'statusCode': 200,
+            'body': json.dumps('SNS notification sent successfully')
+        }
+    except Exception as e:
+        print(e)
+        return {
+            'statusCode': 404,
+            'body': json.dumps('Error occurred while sending SNS notification')
+        }
+        
+        # This Lambda function will notify a user via SNS when there has been a change to a specific DynamoDB table. Make sure to replace the placeholders in the script with the actual values for your use case. Also, make sure that your Lambda function has the necessary IAM permissions to access your DynamoDB table and publish messages to your SNS topic.
