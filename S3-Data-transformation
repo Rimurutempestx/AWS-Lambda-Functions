@@ -1,0 +1,39 @@
+import json
+import boto3
+import io
+import os
+import pandas as pd
+from tabula import wrapper
+
+# Create an S3 client
+s3 = boto3.client('s3')
+
+def lambda_handler(event, context):
+    # Get the object from the event and show its content type
+    bucket_name = event['Records'][0]['s3']['bucket']['name']
+    file_key = event['Records'][0]['s3']['object']['key']
+    response = s3.get_object(Bucket=bucket_name, Key=file_key)
+    text = response['Body'].read()
+
+    # Convert PDF to DataFrame using Tabula
+    df = wrapper.read_pdf(io.BytesIO(text), pages='all', lattice=True)
+
+    # Convert DataFrame to CSV
+    csv_buffer = io.StringIO()
+    df.to_csv(csv_buffer, index=False)
+    csv_text = csv_buffer.getvalue()
+
+    # Upload the CSV result to S3
+    s3.put_object(Body=csv_text.encode(), Bucket=bucket_name, Key=os.path.splitext(file_key)[0] + '.csv')
+    
+    return {
+        'statusCode': 200,
+        'body': json.dumps('PDF transformed to CSV successfully')
+    }
+    
+    This code uses the tabula library to read the source PDF file and convert it into a Pandas DataFrame. Then the DataFrame is converted to CSV format using the built-in to_csv() method. Finally, the output CSV file is uploaded to S3 under the same key as the original PDF, with the .csv extension added.
+
+
+    
+    
+    
