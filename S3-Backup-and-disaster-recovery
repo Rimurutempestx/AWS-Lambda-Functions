@@ -1,0 +1,54 @@
+import boto3
+import json
+
+# Configurations
+source_bucket = "<source-bucket-name>"
+destination_bucket = "<destination-bucket-name>"
+destination_region = "<destination-region>"
+
+# Instantiating clients for S3 resource and client
+s3_resource = boto3.resource('s3')
+s3_client = boto3.client('s3')
+
+def lambda_handler(event, context):
+    try:
+        # Getting objects for the source bucket
+        objects = s3_client.list_objects(Bucket=source_bucket)
+        
+        # Creating session and destination client
+        session = boto3.session.Session()
+        dest_s3 = session.client('s3', region_name=destination_region)
+        
+        if 'Contents' in objects:
+            for obj in objects['Contents']:
+                key = obj['Key']
+                # Copying object to destination bucket while preserving its metadata
+                copy_source = {
+                    'Bucket': source_bucket,
+                    'Key': key
+                }
+                
+                dest_s3.copy(copy_source, destination_bucket, key, ExtraArgs={'MetadataDirective': 'COPY'})
+            return {
+                'statusCode': 200,
+                'body': json.dumps('File copied from source S3 Bucket to Destination S3 Bucket Successfully')
+            }
+        else:
+            raise Exception("No Objects Found within Source Bucket.")
+    except Exception as e:
+        print(e)
+        return {
+            'statusCode': 404,
+            'body': json.dumps('Error Occurred during Copy: {}'.format(e))
+        }
+
+# This Python script uses boto3 module which provides the Amazon Web Services (AWS) SDK for Python. It uses the clients for S3 resource and client to access Amazon S3 buckets.
+
+The script defines two global variables i.e., the source and destination buckets, and the destination region where the back up will be stored. You will need to update these with your own bucket names and destination region.
+
+In the lambda_handler() method, the Amazon S3 list_objects() method retrieves all the available objects from the source bucket. The session and destination client is then created to connect to the destination bucket's specified region, where it copies over files from the source bucket to the destination bucket using the copy() method.
+
+If successful, the function will return a 200 status code and a message stating that files were copied from the source S3 bucket to destination S3 bucket successfully, otherwise, it will return a 404 status code along with the error message.
+
+Note: This code only backs up the files upon invocation of the Lambda function. To automate this process to continuously backup new files added to the source S3 bucket, one option would be to use an Amazon S3 event notification trigger that invokes the Lambda each time new data is added to the source bucket.
+
