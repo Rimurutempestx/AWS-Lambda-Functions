@@ -1,0 +1,57 @@
+import boto3
+
+def lambda_handler(event, context):
+    # Create Redshift client
+    redshift = boto3.client('redshift')
+    
+    # Replace 'cluster-identifier' with your actual Redshift cluster identifier
+    cluster_identifier = 'cluster-identifier'
+    
+    try:
+        # Get the node list of the Redshift cluster
+        cluster_nodes = redshift.describe_cluster_nodes(ClusterIdentifier=cluster_identifier)['ClusterNodes']
+        
+        # Get the total number of nodes in the cluster
+        num_nodes = len(cluster_nodes)
+        
+        # Iterate through each node and analyze its query performance
+        for i in range(num_nodes):
+            node_id = cluster_nodes[i]['NodeIdentifier']
+            queries_spilled_count = redshift.get_metric_statistics(
+                Namespace='AWS/Redshift',
+                MetricName='QueriesSpilledToDisk',
+                Dimensions=[
+                    {
+                        'Name': 'ClusterIdentifier',
+                        'Value': cluster_identifier
+                    },
+                    {
+                        'Name': 'NodeID',
+                        'Value': node_id 
+                    }
+                ],
+                StartTime=datetime.datetime.utcnow() - datetime.timedelta(hours=2),
+                EndTime=datetime.datetime.utcnow(),
+                Period=300,
+                Statistics=['Sum']
+            )['Datapoints'][0]['Sum']
+            
+            if queries_spilled_count > 100000:
+                # Trigger recommendation to increase memory on this node
+                print(f"Node {node_id} has exceeded the queries spilled count threshold. Consider increasing memory.")
+                    
+        return {
+            'statusCode': 200,
+            'body': 'Query analysis completed successfully'
+        }
+    except Exception as e:
+        print(e)
+        return {
+            'statusCode': 500,
+            'body': 'Error occurred while analyzing Redshift queries'
+        }
+        
+        # This is an example Python script for a Lambda function that analyzes Redshift query performance and makes recommendations for improvements.This script uses the boto3 library to interact with the AWS SDK for Redshift. It will retrieve the node list of the specified Redshift cluster, iterate through each node, and check its QueriesSpilledToDisk CloudWatch metric from the last two hours. If the number of queries spilled to disk is above a certain threshold (in this case, 100,000), it will trigger a recommendation to increase memory on that node.
+
+Note that this is just one example of how you might analyze Redshift query performance and make recommendations for improvements; depending on your specific use case, you may need to modify this code to suit your needs.
+        
