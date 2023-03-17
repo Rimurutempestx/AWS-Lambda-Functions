@@ -63,6 +63,7 @@ A list of basic everyday functions used in AWS Lambda. This repository will be d
 - Backup and recovery: You can use Lambda functions to automate Redshift backup and recovery tasks. This can include creating backups on a regular schedule, restoring data from backups, and verifying backups.
 - Data archiving: You can use Lambda functions to archive data from Redshift to S3 or other long-term storage. This can help you reduce storage costs and maintain data access over time.
 - Query optimization: You can use Lambda functions to optimize Redshift queries by analyzing query performance and making recommendations for improvements.
+- Resource management: You can use Lambda functions to manage Redshift cluster resources, such as scaling the cluster up or down based on usage patterns.
 
 
 
