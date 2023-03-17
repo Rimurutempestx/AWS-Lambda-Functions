@@ -1,0 +1,35 @@
+import boto3
+
+def lambda_handler(event, context):
+    client = boto3.client('redshift')
+    cluster_identifier = 'my-redshift-cluster'
+    max_concurrency_scaling = 5
+    
+    # Get the current concurrency scaling level
+    response = client.describe_scalability_configuration(ClusterIdentifier=cluster_identifier)
+    current_metric_scale_count = response['ScalabilityConfigurations'][0]['MaxConcurrencyScaling']['Value']
+    
+    # Get the current number of connections to the database
+    response = client.execute_query(
+        ClusterIdentifier=cluster_identifier,
+        Database='database_name',
+        Sql='SELECT COUNT(*) FROM stv_sessions;'
+    )
+    current_connections = int(response['Rows'][0][0]['VarCharValue'])
+    
+    # Calculate the new metric scale count based on the number of connections
+    new_metric_scale_count = 1
+    if current_connections > max_concurrency_scaling:
+        new_metric_scale_count = int(current_connections / max_concurrency_scaling)
+    
+    # Update the concurrency scaling level if necessary
+    if new_metric_scale_count != current_metric_scale_count:
+        response = client.modify_cluster(
+            ClusterIdentifier=cluster_identifier,
+            ScalableTargetAction={
+                'MaxCapacity': new_metric_scale_count
+            },
+            ScalerType='ConcurrencyScaling'
+        )
+
+#  example Python script for a Lambda function that scales Amazon Redshift clusters up or down based on usage patterns. This script first gets the current concurrency scaling level and the current number of connections to the database. It then calculates a new metric scale count based on the number of connections, and updates the concurrency scaling level if necessary. The max_concurrency_scaling variable can be adjusted to set the maximum number of connections that should be handled by a single concurrency scaling unit.
