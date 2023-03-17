@@ -1,0 +1,38 @@
+import boto3
+
+def lambda_handler(event, context):
+    # Set the threshold for table size
+    size_threshold = 50 * (1024**3)  # 50GB in bytes
+    
+    # Replace 'cluster-id' with your actual Redshift cluster identifier
+    redshift = boto3.client('redshift')
+    cluster_identifier = 'cluster-id'
+    
+    # Replace 'database-name' with your actual Redshift database name
+    database_name = 'database-name'
+    
+    # Get the list of tables in the database
+    tables = redshift.execute_statement(ClusterIdentifier=cluster_identifier, 
+                                         Database=database_name, 
+                                         SqlStatement="SELECT tablename FROM pg_tables WHERE schemaname='public';")
+    
+    for table in tables['Records']:
+        # Get the size of the table
+        table_size = redshift.describe_table(ClusterIdentifier=cluster_identifier, 
+                                              Database=database_name, 
+                                              Table=table[0])['Table']['TableSizeBytes']
+        
+        if table_size > size_threshold:
+            # Replace 'new-table-name' with the desired name for the new table
+            response = redshift.execute_statement(ClusterIdentifier=cluster_identifier, 
+                                                   Database=database_name, 
+                                                   SqlStatement=f"CREATE TABLE new-table-name (LIKE {table[0]})")
+            
+            print(f"Created new table 'new-table-name' based on '{table[0]}' with size {table_size}")
+    
+    return {
+        'statusCode': 200,
+        'body': 'New tables created successfully'
+    }
+
+# This is a example script for creating a new table in Amazon Redshift when a table exceeds 50GB of storage. This script uses the boto3 library to interact with the Amazon Redshift API. It first sets a threshold for table size, then gets a list of all tables in the specified database. For each table, it gets the size of the table using the describe_table() method and checks if it exceeds the size threshold. If it does, it creates a new table based on the existing table using the execute_statement() method and a SQL statement. Finally, it returns a success message. Note that you'll need to replace the 'cluster-id' and 'database-name' placeholders with your own Redshift cluster identifier and database name, respectively, and choose a unique name for the new table by replacing 'new-table-name'.
