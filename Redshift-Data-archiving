@@ -1,0 +1,80 @@
+import boto3
+
+def lambda_handler(event, context):
+    # Define the Amazon Redshift cluster information
+    database_name = 'database-name'
+    cluster_identifier = 'cluster-identifier'
+    user_name = 'user-name'
+    password = 'password'
+
+    # Define the S3 bucket and key information where backup will be saved
+    s3_bucket_name = 's3-bucket-name'
+    s3_key_prefix = 's3-key-prefix'
+
+    # Define the Amazon Glacier vault information
+    glacier_vault_name = 'glacier-vault-name'
+
+    # Create the Amazon Redshift and S3 client objects
+    redshift = boto3.client('redshift')
+    s3 = boto3.client('s3')
+    
+    # Create the AWS Glaceir client object
+    glacier = boto3.client('glacier')
+
+    # Generate a unique export name
+    export_name = 'redshift-export-' + str(time.time()).replace('.', '')
+
+    # Create the Amazon Redshift export task
+    response = redshift.create_cluster_snapshot(
+        SnapshotIdentifier=export_name,
+        ClusterIdentifier=cluster_identifier,
+        Tags=[
+            {
+                'Key': 'Name',
+                'Value': export_name,
+        }],
+    )
+
+    # Wait until the snapshot is complete
+    snapshot_waiter = redshift.get_waiter('snapshot_available')
+    snapshot_waiter.wait(
+        SnapshotIdentifier=export_name,
+        ClusterIdentifier=cluster_identifier,
+        WaiterConfig={
+            'Delay': 60,
+            'MaxAttempts': 10
+        }
+    )
+    
+    # Determine what the latest snapshot identifier was
+    snapshots = redshift.describe_cluster_snapshots(ClusterIdentifier=cluster_identifier)['Snapshots']
+    latest_snapshot = sorted(snapshots, key=lambda k: k['SnapshotCreateTime'])[-1]
+    
+    # Create the S3 Key
+    s3_key = s3_key_prefix + '/' + latest_snapshot['SnapshotIdentifier'] + '.snapshot'
+    
+    # Copy the snapshot to S3
+    s3.copy_object(
+        Bucket=s3_bucket_name,
+        Key=s3_key,
+        CopySource={
+            'Bucket': latest_snapshot['BucketName'],
+            'Key': latest_snapshot['SnapshotClusterIdentifier'] + '/' + latest_snapshot['SnapshotIdentifier']
+        }
+    )
+
+    # Delete the snapshot from Amazon Redshift
+    redshift.delete_cluster_snapshot(SnapshotIdentifier=latest_snapshot['SnapshotIdentifier'])
+
+    # Archive the snapshot in Amazon Glacier
+    glacier_response = glacier.upload_archive(vaultName=glacier_vault_name, body=s3_key)
+
+    return {
+        'statusCode': 200,
+        'body': json.dumps('Amazon Redshift snapshot archived to Amazon Glacier.' + glacier_response['archiveId'])
+    }
+    
+    # This is a Python script for an AWS Lambda function that archives Amazon Redshift data to Amazon Glacier Deep Archive when executed.
+    This script connects to your Amazon Redshift cluster using its identifier, database name, username, and password. Then it exports a new Amazon Redshift snapshot into your default Amazon S3 bucket and copies it into the defined S3 key prefix.
+
+Once the backup is stored in S3, the script deletes the snapshot from the Amazon Redshift cluster and archives the backup into the specified Amazon Glacier vault. Finally, a confirmation message that includes the unique archive ID is returned.
